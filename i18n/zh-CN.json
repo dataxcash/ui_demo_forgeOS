@@ -35,6 +35,7 @@
   "nav.syncStatus": "入库管理",
   "nav.syncSettings": "入库管理",
   "nav.ingestSetup": "接入向导",
+  "nav.ingestUpload": "文件入库",
   "nav.ingestOverview": "入库管理",
   "nav.ingestManage": "入库管理",
   "nav.ingestDirs": "入库管理",

@@ -48,6 +48,7 @@ export function homeFor(account) {
 /** 全员：文档入库 */
 function ingestApp(account) {
   const items = [
+    { href: "./ingest-upload.html", labelKey: "nav.ingestUpload", key: "ingest-upload" },
     { href: "./ingest-setup.html", labelKey: "nav.ingestSetup", key: "ingest-setup" },
     { href: "./sync-status.html", labelKey: "nav.ingestManage", key: "sync-status" },
   ];

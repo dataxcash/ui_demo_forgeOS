@@ -439,6 +439,39 @@ export async function ingestRemoveDir(id) {
   return { ok: true, dirs };
 }
 
+/** 文件入库：Web 直传后台 → slimRAG（不经 slimSync） */
+export async function uploadIngestFiles(account, files) {
+  await delay(420);
+  const list = Array.isArray(files) ? files : [];
+  if (!list.length) return { ok: false, error: "请先选择文件" };
+  const st = readState();
+  const batch = {
+    id: "up-" + Date.now(),
+    at: new Date().toISOString().slice(0, 16).replace("T", " "),
+    userId: account?.id || "",
+    userName: account?.name || "",
+    role: account?.role || "",
+    files: list.map((f) => ({
+      name: f.name,
+      size: f.size || 0,
+      type: f.type || "",
+    })),
+    route: "slimRAG",
+    via: "upload",
+  };
+  const hist = [...(st.ingestUploads || [])];
+  hist.unshift(batch);
+  st.ingestUploads = hist.slice(0, 20);
+  writeState(st);
+  return { ok: true, batch, accepted: list.length };
+}
+
+export async function getIngestUploads() {
+  await delay(60);
+  const st = readState();
+  return { items: st.ingestUploads || [] };
+}
+
 export async function getStatus(account) {
   await delay(80);
   const items = [];

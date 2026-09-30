@@ -651,3 +651,25 @@
   min-width: 0;
   flex: 1;
 }
+
+/* 文件入库上传 */
+.upload-box {
+  max-width: 560px;
+}
+.upload-drop {
+  border: 1px dashed var(--line);
+  background: var(--surface-2);
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+.upload-drop.drag {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.upload-picked {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}

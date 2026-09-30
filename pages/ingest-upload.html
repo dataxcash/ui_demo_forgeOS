@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>文件入库 · 文档入库</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav10" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav10" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav10" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="flash" id="flash"></div>
+    <div class="page-head">
+      <h1>文件入库</h1>
+      <p>选文件上传即可。带上当前用户身份交后台，直接进 slimRAG；不经本机 slimSync。</p>
+    </div>
+
+    <div class="card upload-box">
+      <div class="upload-drop" id="drop">
+        <input type="file" id="file-input" multiple hidden />
+        <p style="margin:0 0 10px">把文件拖到这里，或</p>
+        <button type="button" class="btn btn-primary" id="btn-pick">选择文件</button>
+      </div>
+      <div id="picked" class="upload-picked muted small" hidden></div>
+      <div class="actions" style="margin-top:12px">
+        <button type="button" class="btn" id="btn-clear" disabled>清空</button>
+        <button type="button" class="btn btn-primary" id="btn-upload" disabled>上传入库</button>
+      </div>
+      <p class="muted small" style="margin:10px 0 0">
+        当前用户：<strong id="who"></strong> · 上传后由后台处理，本页不展示切段进度。
+      </p>
+    </div>
+
+    <div class="deal-section" style="margin-top:18px">
+      <h2 style="margin:0 0 8px">本会话已交后台</h2>
+      <div id="hist"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { requireAccount } from "../js/session.js?v=nav10";
+    import { mountShell } from "../js/shell.js?v=nav10";
+    import {
+      uploadIngestFiles,
+      getIngestUploads,
+    } from "../js/api-mock.js?v=nav10";
+    import { esc } from "../js/esc.js?v=nav10";
+
+    const account = await requireAccount();
+    await mountShell({ account, active: "ingest-upload" });
+
+    document.getElementById("who").textContent =
+      `${account.name || account.id}（${account.role}）`;
+
+    const input = document.getElementById("file-input");
+    const drop = document.getElementById("drop");
+    const pickedEl = document.getElementById("picked");
+    const btnPick = document.getElementById("btn-pick");
+    const btnClear = document.getElementById("btn-clear");
+    const btnUpload = document.getElementById("btn-upload");
+    /** @type {File[]} */
+    let files = [];
+
+    function tip(msg) {
+      const flash = document.getElementById("flash");
+      flash.textContent = msg;
+      flash.classList.add("show");
+    }
+
+    function fmtSize(n) {
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function paintPicked() {
+      const on = files.length > 0;
+      btnClear.disabled = !on;
+      btnUpload.disabled = !on;
+      if (!on) {
+        pickedEl.hidden = true;
+        pickedEl.innerHTML = "";
+        return;
+      }
+      pickedEl.hidden = false;
+      pickedEl.innerHTML =
+        `<div style="margin-bottom:4px">已选 ${files.length} 个：</div>` +
+        `<ul style="margin:0;padding-left:18px">` +
+        files
+          .map(
+            (f) =>
+              `<li>${esc(f.name)} <span class="muted">(${fmtSize(f.size)})</span></li>`
+          )
+          .join("") +
+        `</ul>`;
+    }
+
+    function addFiles(list) {
+      const next = [...files];
+      for (const f of list) {
+        if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
+        next.push(f);
+      }
+      files = next;
+      paintPicked();
+    }
+
+    async function paintHist() {
+      const { items } = await getIngestUploads();
+      const hist = document.getElementById("hist");
+      if (!items.length) {
+        hist.innerHTML = `<div class="empty">还没有上传记录。</div>`;
+        return;
+      }
+      hist.innerHTML = items
+        .map(
+          (b) => `<div class="card" style="margin-bottom:8px">
+            <div class="deal-title">${esc(b.at)} · 已交后台 ${b.files.length} 个</div>
+            <div class="deal-meta muted small">
+              ${esc(b.userName)} · 路由 ${esc(b.route)} · 批次 ${esc(b.id)}
+            </div>
+            <div class="muted small" style="margin-top:6px">
+              ${b.files.map((f) => esc(f.name)).join("；")}
+            </div>
+          </div>`
+        )
+        .join("");
+    }
+
+    btnPick.onclick = () => input.click();
+    input.onchange = () => {
+      addFiles([...input.files]);
+      input.value = "";
+    };
+    btnClear.onclick = () => {
+      files = [];
+      paintPicked();
+    };
+    btnUpload.onclick = async () => {
+      if (!files.length) return;
+      btnUpload.disabled = true;
+      const payload = files.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+      }));
+      const res = await uploadIngestFiles(account, payload);
+      if (!res.ok) {
+        tip(res.error || "上传失败");
+        btnUpload.disabled = false;
+        return;
+      }
+      tip(`已交后台 ${res.accepted} 个文件`);
+      files = [];
+      paintPicked();
+      await paintHist();
+    };
+
+    drop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      drop.classList.add("drag");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("drag");
+      if (e.dataTransfer?.files?.length) addFiles([...e.dataTransfer.files]);
+    });
+
+    paintPicked();
+    await paintHist();
+  </script>
+</body>
+</html>
