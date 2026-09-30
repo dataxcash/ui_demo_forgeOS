@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>接入向导 · 文档入库</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav7" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav7" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav7" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="flash" id="flash"></div>
+    <div class="page-head">
+      <h1>接入向导（Windows）</h1>
+      <p>先装 Rust SSHD 引导服务 → 一次性管理员授权 → 系统建专户并装 slimSync。专户对你无感；管理员口令不落库。</p>
+    </div>
+    <div class="rules-box" style="margin-bottom:12px">
+      <div class="rules-title">和 Linux 怎么对齐</div>
+      <p style="margin:0">引导面 = SSH。装好 SSHD 并建好专户后，envPD 对 Win/Linux 同一套管理路径。</p>
+    </div>
+    <ol class="wizard" id="wizard"></ol>
+  </div>
+  <script type="module">
+    import { requireAccount } from "../js/session.js?v=nav7";
+    import { mountShell } from "../js/shell.js?v=nav7";
+    import {
+      getIngestState,
+      ingestMarkBootstrapInstalled,
+      ingestSubmitAdmin,
+      ingestMarkProbeReady,
+    } from "../js/api-mock.js?v=nav7";
+    import { esc } from "../js/esc.js?v=nav7";
+
+    const account = await requireAccount();
+    await mountShell({ account, active: "ingest-setup" });
+
+    const flash = document.getElementById("flash");
+    function tip(msg) {
+      flash.textContent = msg;
+      flash.classList.add("show");
+    }
+
+    async function paint() {
+      const s = await getIngestState();
+      const step1Done = s.bootstrap.installed;
+      const step2Done = s.adminAuth.done;
+      const step3Done = s.phase === "ready";
+
+      document.getElementById("wizard").innerHTML = `
+        <li class="wizard-step ${step1Done ? "done" : "current"}">
+          <h3>① 安装引导服务（Rust SSHD）</h3>
+          <p class="muted small">开机自启。未检测到不得进入下一步。演示包：${esc(
+            s.bootstrap.downloadName
+          )} · 端口 ${s.bootstrap.port}</p>
+          ${
+            step1Done
+              ? `<p class="pill ok">已检测到 · 最近 ${esc(s.bootstrap.lastSeen || "—")}</p>`
+              : `<div class="toolbar">
+                  <button type="button" class="btn btn-primary" id="btn-dl">下载安装包（演示）</button>
+                  <button type="button" class="btn" id="btn-boot">我已安装，刷新检测</button>
+                </div>`
+          }
+        </li>
+        <li class="wizard-step ${!step1Done ? "locked" : step2Done ? "done" : "current"}">
+          <h3>② 一次性管理员授权</h3>
+          <p class="muted small">${esc(
+            s.adminAuth.note
+          )}。用于创建入库专户；之后 SSH 走专户，你无感。</p>
+          ${
+            !step1Done
+              ? `<p class="muted">请先完成①</p>`
+              : step2Done
+                ? `<p class="pill ok">已授权 · 专户已由系统创建（界面不展示口令）</p>`
+                : `<div class="card" style="max-width:420px">
+                    <label class="muted small">本机管理员账户</label>
+                    <input id="adm-user" style="width:100%;margin:4px 0 10px;padding:7px 8px;border:1px solid var(--line)" placeholder="Administrator 或域管账户" />
+                    <label class="muted small">密码（不保存）</label>
+                    <input id="adm-pass" type="password" style="width:100%;margin:4px 0 10px;padding:7px 8px;border:1px solid var(--line)" />
+                    <button type="button" class="btn btn-primary" id="btn-admin">授权并创建专户</button>
+                  </div>`
+          }
+        </li>
+        <li class="wizard-step ${!step2Done ? "locked" : step3Done ? "done" : "current"}">
+          <h3>③ envPD 安装 slimSync（Win 版）</h3>
+          <p class="muted small">经 SSH 安装探针；UI 反馈状态。专户已用于连接。</p>
+          <p>探针：<span class="pill ${
+            s.probe.slimSync === "在线" ? "ok" : s.probe.slimSync === "安装中" ? "warn" : ""
+          }">${esc(s.probe.slimSync)}</span>
+          ${s.probe.version ? ` · ${esc(s.probe.version)}` : ""}
+          ${s.probe.lastHeartbeat ? ` · 心跳 ${esc(s.probe.lastHeartbeat)}` : ""}</p>
+          ${
+            step2Done && !step3Done
+              ? `<button type="button" class="btn btn-primary" id="btn-probe">刷新探针状态（演示：标记就绪）</button>`
+              : ""
+          }
+          ${
+            step3Done
+              ? `<p class="toolbar"><a class="btn btn-primary" href="./ingest-dirs.html">去配置同步目录</a>
+                 <a class="btn" href="./sync-status.html">看进料概况</a></p>`
+              : ""
+          }
+        </li>
+        <li class="wizard-step ${step3Done ? "done" : "locked"}">
+          <h3>④ 配置目录并查看结果</h3>
+          <p class="muted small">在「同步目录」「进料概况」完成。邮件/社交提取不在本向导。</p>
+        </li>`;
+
+      const dl = document.getElementById("btn-dl");
+      if (dl)
+        dl.onclick = () => tip("演示环境：请视为已下载 " + s.bootstrap.downloadName);
+      const boot = document.getElementById("btn-boot");
+      if (boot)
+        boot.onclick = async () => {
+          await ingestMarkBootstrapInstalled();
+          tip("已检测到引导服务（演示）");
+          paint();
+        };
+      const adm = document.getElementById("btn-admin");
+      if (adm)
+        adm.onclick = async () => {
+          const u = document.getElementById("adm-user").value.trim();
+          const p = document.getElementById("adm-pass").value;
+          if (!u || !p) {
+            tip("请输入管理员账户和密码（演示不校验真伪，但不许空）");
+            return;
+          }
+          document.getElementById("adm-pass").value = "";
+          await ingestSubmitAdmin(u, p);
+          tip("已用管理员一次性授权：专户已创建；口令未保存。正在经 SSH 装 slimSync…");
+          paint();
+        };
+      const probe = document.getElementById("btn-probe");
+      if (probe)
+        probe.onclick = async () => {
+          await ingestMarkProbeReady();
+          tip("slimSync 已在线（演示）");
+          paint();
+        };
+    }
+    paint();
+  </script>
+</body>
+</html>

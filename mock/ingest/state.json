@@ -1,0 +1,78 @@
+{
+  "phase": "need_bootstrap",
+  "osHint": "Windows",
+  "bootstrap": {
+    "installed": false,
+    "version": "fos-sshd 0.1.0",
+    "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+    "port": 2222,
+    "lastSeen": null
+  },
+  "adminAuth": {
+    "done": false,
+    "note": "管理员账密仅本次使用，不落库"
+  },
+  "syncAccount": {
+    "created": false,
+    "username": "fos-ingest",
+    "userVisible": false
+  },
+  "probe": {
+    "slimSync": "未安装",
+    "version": null,
+    "lastHeartbeat": null
+  },
+  "dirs": [
+    {
+      "path": "D:\\\\项目资料",
+      "enabled": true,
+      "mode": "双向",
+      "files": 12840,
+      "bytes": "42.6 GB",
+      "status": "正常"
+    },
+    {
+      "path": "D:\\\\邮件归档导出",
+      "enabled": false,
+      "mode": "仅上传",
+      "files": 0,
+      "bytes": "0",
+      "status": "未启用"
+    }
+  ],
+  "stats": {
+    "todayUploaded": "128 MB",
+    "todayDownloaded": "36 MB",
+    "pending": 14,
+    "errors": 1,
+    "capacityUsed": "43.8 GB",
+    "capacityQuota": "200 GB",
+    "lastError": "笔记本侧曾权限拒绝 1 个文件（演示）"
+  },
+  "fleet": [
+    {
+      "user": "李娜",
+      "host": "工作机",
+      "sshd": "在线",
+      "slimSync": "在线",
+      "version": "0.9.2-win",
+      "lastSeen": "2026-09-30 17:02"
+    },
+    {
+      "user": "赵强",
+      "host": "笔记本",
+      "sshd": "在线",
+      "slimSync": "延迟",
+      "version": "0.9.1-win",
+      "lastSeen": "2026-09-30 12:18"
+    },
+    {
+      "user": "孙悦",
+      "host": "工作机",
+      "sshd": "离线",
+      "slimSync": "未知",
+      "version": "—",
+      "lastSeen": "2026-09-28 19:40"
+    }
+  ]
+}

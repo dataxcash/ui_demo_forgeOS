@@ -1,14 +1,14 @@
-import { esc } from "./esc.js?v=nav6";
-import { loadI18n, t } from "./i18n.js?v=nav6";
+import { esc } from "./esc.js?v=nav7";
+import { loadI18n, t } from "./i18n.js?v=nav7";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav6";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav6";
-import { confirmDialog } from "./confirm.js?v=nav6";
+} from "./session.js?v=nav7";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav7";
+import { confirmDialog } from "./confirm.js?v=nav7";
 
 export async function mountShell({ account, active }) {
   await loadI18n("zh-CN");

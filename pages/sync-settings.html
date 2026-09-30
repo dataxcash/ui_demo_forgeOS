@@ -2,67 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>文档入库 · 同步设置</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+  <meta http-equiv="refresh" content="0;url=./ingest-dirs.html" />
+  <title>转向同步目录</title>
+  <script>location.replace("./ingest-dirs.html");</script>
 </head>
-<body>
-  <div id="page-root">
-    <div class="flash" id="flash"></div>
-    <div class="page-head">
-      <h1>同步设置</h1>
-      <p>文档入库：目录、模式与排除规则。入库完整流程另专项讨论；本页仅设置入口。</p>
-    </div>
-    <div class="card" id="form"></div>
-    <div class="toolbar">
-      <button type="button" class="btn btn-primary" id="save">保存设置</button>
-    </div>
-  </div>
-  <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav4";
-    import { mountShell } from "../js/shell.js?v=nav4";
-    import { confirmDialog } from "../js/confirm.js?v=nav4";
-    import { esc } from "../js/esc.js?v=nav4";
-
-    const account = await requireAccount();
-    await mountShell({ account, active: "sync-settings" });
-
-    const data = await (await fetch("../mock/sync/overview.json")).json();
-    const st = data.settings;
-    document.getElementById("form").innerHTML = `
-      <div class="field" style="margin-bottom:12px">
-        <label class="muted small">开机自启客户端</label><br/>
-        <label><input type="checkbox" id="auto" ${st.autoStart ? "checked" : ""}/> 启用</label>
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label class="muted small">带宽限制</label><br/>
-        <select id="bw" style="padding:6px 8px;border:1px solid var(--line);min-width:180px">
-          <option ${st.bandwidthLimit === "不限制" ? "selected" : ""}>不限制</option>
-          <option>10 Mbps</option>
-          <option>50 Mbps</option>
-        </select>
-      </div>
-      <div class="field">
-        <label class="muted small">排除规则（每行一条）</label><br/>
-        <textarea id="ex" rows="4" style="width:100%;border:1px solid var(--line);padding:8px;font-family:var(--font-mono);font-size:12px">${esc(
-          st.exclude.join("\n")
-        )}</textarea>
-      </div>
-      <p class="muted small" style="margin-top:12px">目录增删在客户端完成；此处保存策略。写回须确认。</p>`;
-
-    document.getElementById("save").onclick = async () => {
-      const ok = await confirmDialog({
-        title: "保存同步设置",
-        body: "将更新本账户的同步策略，并由客户端按新规则执行。",
-        confirmText: "保存",
-      });
-      if (!ok) return;
-      const flash = document.getElementById("flash");
-      flash.textContent = "设置已保存（预发环境本地记录）";
-      flash.classList.add("show");
-    };
-  </script>
-</body>
+<body><p><a href="./ingest-dirs.html">同步目录</a></p></body>
 </html>

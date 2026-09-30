@@ -45,15 +45,21 @@ export function homeFor(account) {
   return map[account.role] || "./login.html";
 }
 
-/** 全员：文档入库（原文件同步） */
-function ingestApp() {
-  return {
-    appKey: "app.ingest",
-    items: [
-      { href: "./sync-status.html", labelKey: "nav.syncStatus", key: "sync-status" },
-      { href: "./sync-settings.html", labelKey: "nav.syncSettings", key: "sync-settings" },
-    ],
-  };
+/** 全员：文档入库 */
+function ingestApp(account) {
+  const items = [
+    { href: "./ingest-setup.html", labelKey: "nav.ingestSetup", key: "ingest-setup" },
+    { href: "./sync-status.html", labelKey: "nav.ingestOverview", key: "sync-status" },
+    { href: "./ingest-dirs.html", labelKey: "nav.ingestDirs", key: "ingest-dirs" },
+  ];
+  if (account.role === "it") {
+    items.push({
+      href: "./ingest-fleet.html",
+      labelKey: "nav.ingestFleet",
+      key: "ingest-fleet",
+    });
+  }
+  return { id: "ingest", appKey: "app.ingest", items };
 }
 
 /** 全员：ai 工具 */
@@ -108,7 +114,7 @@ export function navGroupsFor(account) {
     });
   }
 
-  groups.push({ ...ingestApp(), id: "ingest" });
+  groups.push(ingestApp(account));
   groups.push({ ...aiToolsApp(), id: "aitools" });
   return groups;
 }

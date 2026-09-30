@@ -452,3 +452,32 @@
   border-left: 3px solid var(--accent);
   font-size: 12px;
 }
+
+/* 文档入库向导 */
+.wizard {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.wizard-step {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.wizard-step:last-child {
+  border-bottom: 0;
+}
+.wizard-step h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.wizard-step.locked {
+  opacity: 0.55;
+}
+.wizard-step.done {
+  background: #f7faf8;
+}
+.wizard-step.current {
+  box-shadow: inset 3px 0 0 var(--accent);
+}

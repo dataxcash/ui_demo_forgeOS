@@ -252,6 +252,101 @@ export async function getAiTools() {
   return loadJson("../mock/aitools/catalog.json");
 }
 
+/** 文档入库：基线 mock + session 向导进度 */
+export async function getIngestState() {
+  await delay();
+  const base = await loadJson("../mock/ingest/state.json");
+  const st = readState();
+  const ing = st.ingest || {};
+  const bootstrapInstalled = !!ing.bootstrapInstalled;
+  const adminDone = !!ing.adminDone;
+  const probeReady = !!ing.probeReady;
+  let phase = "need_bootstrap";
+  if (bootstrapInstalled && !adminDone) phase = "need_admin";
+  if (bootstrapInstalled && adminDone && !probeReady) phase = "provisioning";
+  if (bootstrapInstalled && adminDone && probeReady) phase = "ready";
+
+  return {
+    ...base,
+    phase,
+    bootstrap: {
+      ...base.bootstrap,
+      installed: bootstrapInstalled,
+      lastSeen: bootstrapInstalled
+        ? ing.bootstrapSeen || "2026-09-30 18:00"
+        : null,
+    },
+    adminAuth: {
+      ...base.adminAuth,
+      done: adminDone,
+    },
+    syncAccount: {
+      ...base.syncAccount,
+      created: adminDone || probeReady,
+    },
+    probe: probeReady
+      ? {
+          slimSync: "在线",
+          version: "0.9.2-win",
+          lastHeartbeat: ing.probeSeen || "2026-09-30 18:05",
+        }
+      : adminDone
+        ? {
+            slimSync: "安装中",
+            version: null,
+            lastHeartbeat: null,
+          }
+        : base.probe,
+    dirs: ing.dirs || base.dirs,
+  };
+}
+
+export async function ingestMarkBootstrapInstalled() {
+  const st = readState();
+  st.ingest = {
+    ...(st.ingest || {}),
+    bootstrapInstalled: true,
+    bootstrapSeen: new Date().toISOString().slice(0, 16).replace("T", " "),
+  };
+  writeState(st);
+  return getIngestState();
+}
+
+export async function ingestSubmitAdmin(_user, _pass) {
+  await delay(400);
+  const st = readState();
+  st.ingest = {
+    ...(st.ingest || {}),
+    bootstrapInstalled: true,
+    adminDone: true,
+    probeReady: false,
+  };
+  writeState(st);
+  // 演示：短暂「安装中」后由页面再点「刷新探针」就绪
+  return getIngestState();
+}
+
+export async function ingestMarkProbeReady() {
+  const st = readState();
+  st.ingest = {
+    ...(st.ingest || {}),
+    bootstrapInstalled: true,
+    adminDone: true,
+    probeReady: true,
+    probeSeen: new Date().toISOString().slice(0, 16).replace("T", " "),
+  };
+  writeState(st);
+  return getIngestState();
+}
+
+export async function ingestSaveDirs(dirs) {
+  await delay(150);
+  const st = readState();
+  st.ingest = { ...(st.ingest || {}), dirs };
+  writeState(st);
+  return { ok: true };
+}
+
 export async function getStatus(account) {
   await delay(80);
   const items = [];

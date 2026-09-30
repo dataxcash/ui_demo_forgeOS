@@ -32,7 +32,11 @@
   "nav.boss": "经营与风险",
   "nav.itHome": "设施分层",
   "nav.itJob": "批炼任务",
-  "nav.syncStatus": "运行状态",
-  "nav.syncSettings": "同步设置",
+  "nav.syncStatus": "进料概况",
+  "nav.syncSettings": "同步目录",
+  "nav.ingestSetup": "接入向导",
+  "nav.ingestOverview": "进料概况",
+  "nav.ingestDirs": "同步目录",
+  "nav.ingestFleet": "探针总览",
   "nav.aiTools": "能力一览"
 }
