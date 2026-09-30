@@ -382,24 +382,51 @@ function parentPath(p) {
 }
 
 export async function ingestAddDir(path) {
+  const res = await ingestAddDirs([path]);
+  if (!res.ok) return res;
+  return { ok: true, dirs: res.dirs, added: res.added };
+}
+
+/** 批量加入监视目录 */
+export async function ingestAddDirs(paths) {
   await delay(180);
   const st = readState();
   const cur = await getIngestState();
   const dirs = [...(cur.dirs || [])];
-  let p = (path || "").trim().replace(/\//g, "\\");
-  if (!p) return { ok: false, error: "请先选择目录" };
-  if (p.endsWith("\\") && !/^[A-Za-z]:\\$/.test(p)) p = p.slice(0, -1);
-  if (dirs.some((d) => d.path === p)) return { ok: false, error: "目录已在列表中" };
-  dirs.push({
-    id: "d" + Date.now(),
-    path: p,
-    files: 0,
-    bytes: "—",
-    status: "监视中",
-  });
+  const existing = new Set(dirs.map((d) => d.path));
+  const added = [];
+  const skipped = [];
+  for (const raw of paths || []) {
+    let p = String(raw || "")
+      .trim()
+      .replace(/\//g, "\\");
+    if (!p) continue;
+    if (p.endsWith("\\") && !/^[A-Za-z]:\\$/.test(p)) p = p.slice(0, -1);
+    if (existing.has(p)) {
+      skipped.push(p);
+      continue;
+    }
+    existing.add(p);
+    const row = {
+      id: "d" + Date.now() + "-" + added.length,
+      path: p,
+      files: 0,
+      bytes: "—",
+      status: "监视中",
+    };
+    dirs.push(row);
+    added.push(row);
+  }
+  if (!added.length) {
+    return {
+      ok: false,
+      error: skipped.length ? "所选目录已在列表中" : "请先选择目录",
+      skipped,
+    };
+  }
   st.ingest = { ...(st.ingest || {}), dirs };
   writeState(st);
-  return { ok: true, dirs };
+  return { ok: true, dirs, added, skipped };
 }
 
 export async function ingestRemoveDir(id) {

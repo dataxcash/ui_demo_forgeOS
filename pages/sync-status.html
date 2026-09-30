@@ -24,7 +24,7 @@
     import {
       getIngestState,
       browseIngestFs,
-      ingestAddDir,
+      ingestAddDirs,
       ingestRemoveDir,
     } from "../js/api-mock.js?v=nav9";
     import { confirmDialog } from "../js/confirm.js?v=nav9";
@@ -44,24 +44,24 @@
       flash.classList.add("show");
     }
 
-    /** 本机目录浏览对话框：点进文件夹，选中后确认添加 */
+    /** 本机目录浏览：勾选多选，双击进入；确认一次全部加入 */
     function openAddDialog() {
       const wrap = document.getElementById("modal-root");
-      let cwd = "";
-      let selected = null;
       let listing = { path: "", parent: null, entries: [] };
+      /** @type {Map<string, {name:string,path:string,kind:string}>} */
+      const picked = new Map();
 
       wrap.innerHTML = `
         <div class="modal-backdrop show" id="dlg">
           <div class="modal modal-browse" role="dialog" aria-label="选择入库目录">
             <h3 style="margin:0 0 6px;font-size:15px">选择入库目录</h3>
-            <p class="muted small" style="margin:0 0 10px">在本机上浏览并选择要监视的文件夹。</p>
+            <p class="muted small" style="margin:0 0 10px">勾选可多选；双击文件夹进入下一级。</p>
             <div class="fs-bar">
               <button type="button" class="btn" id="fs-up" disabled>上级</button>
               <div class="fs-path" id="fs-path">此电脑</div>
             </div>
-            <div class="fs-list" id="fs-list" role="listbox"></div>
-            <div class="fs-selected muted small">已选：<strong id="fs-sel">未选择</strong></div>
+            <div class="fs-list" id="fs-list" role="listbox" aria-multiselectable="true"></div>
+            <div class="fs-selected muted small">已选 <strong id="fs-sel-count">0</strong> 个：<span id="fs-sel">无</span></div>
             <div class="actions">
               <button type="button" class="btn" id="dlg-cancel">取消</button>
               <button type="button" class="btn btn-primary" id="dlg-ok" disabled>确认添加</button>
@@ -77,63 +77,87 @@
       const pathEl = document.getElementById("fs-path");
       const listEl = document.getElementById("fs-list");
       const selEl = document.getElementById("fs-sel");
+      const countEl = document.getElementById("fs-sel-count");
 
-      function setSelected(entry) {
-        selected = entry;
-        selEl.textContent = entry ? entry.path.replace(/\\$/, "") : "未选择";
-        okBtn.disabled = !entry || entry.kind === "drive";
+      function refreshPickedUi() {
+        const items = [...picked.values()];
+        countEl.textContent = String(items.length);
+        selEl.textContent = items.length
+          ? items.map((e) => e.path.replace(/\\$/, "")).join("；")
+          : "无";
+        okBtn.disabled = items.length === 0;
+        okBtn.textContent =
+          items.length > 1 ? `确认添加（${items.length}）` : "确认添加";
         listEl.querySelectorAll(".fs-item").forEach((el) => {
-          el.classList.toggle(
-            "selected",
-            entry && el.getAttribute("data-path") === entry.path
-          );
+          const path = el.getAttribute("data-path");
+          const on = picked.has(path);
+          el.classList.toggle("selected", on);
+          const cb = el.querySelector('input[type="checkbox"]');
+          if (cb) cb.checked = on;
         });
+      }
+
+      function togglePick(entry) {
+        if (!entry || entry.kind === "drive") return;
+        if (picked.has(entry.path)) picked.delete(entry.path);
+        else picked.set(entry.path, entry);
+        refreshPickedUi();
       }
 
       async function load(path) {
         listing = await browseIngestFs(path);
-        cwd = listing.path || "";
-        pathEl.textContent = cwd || "此电脑";
+        pathEl.textContent = listing.path || "此电脑";
         upBtn.disabled = listing.parent === null;
         if (listing.error) {
           listEl.innerHTML = `<div class="empty">${esc(listing.error)}</div>`;
-          setSelected(null);
+          refreshPickedUi();
           return;
         }
         if (!listing.entries.length) {
           listEl.innerHTML = `<div class="empty">此文件夹为空</div>`;
-          setSelected(
-            cwd
-              ? { name: cwd, path: cwd, kind: "dir" }
-              : null
-          );
+          refreshPickedUi();
           return;
         }
         listEl.innerHTML = listing.entries
-          .map(
-            (e) => `<button type="button" class="fs-item" role="option"
-              data-path="${esc(e.path)}" data-kind="${esc(e.kind)}" data-name="${esc(e.name)}">
-              <span class="fs-ico">${e.kind === "drive" ? "盘" : "夹"}</span>
-              <span class="fs-name">${esc(e.name)}</span>
-            </button>`
-          )
-          .join("");
-        setSelected(null);
-        listEl.querySelectorAll(".fs-item").forEach((btn) => {
-          const entry = {
-            name: btn.getAttribute("data-name"),
-            path: btn.getAttribute("data-path"),
-            kind: btn.getAttribute("data-kind"),
-          };
-          btn.onclick = () => {
-            if (entry.kind === "drive") {
-              load(entry.path);
-              return;
+          .map((e) => {
+            if (e.kind === "drive") {
+              return `<button type="button" class="fs-item" data-path="${esc(
+                e.path
+              )}" data-kind="drive" data-name="${esc(e.name)}">
+                <span class="fs-ico">盘</span>
+                <span class="fs-name">${esc(e.name)}</span>
+              </button>`;
             }
-            setSelected(entry);
+            return `<label class="fs-item" data-path="${esc(
+              e.path
+            )}" data-kind="dir" data-name="${esc(e.name)}">
+              <input type="checkbox" class="fs-check" />
+              <span class="fs-ico">夹</span>
+              <span class="fs-name">${esc(e.name)}</span>
+            </label>`;
+          })
+          .join("");
+        listEl.querySelectorAll(".fs-item").forEach((el) => {
+          const entry = {
+            name: el.getAttribute("data-name"),
+            path: el.getAttribute("data-path"),
+            kind: el.getAttribute("data-kind"),
           };
-          btn.ondblclick = () => load(entry.path);
+          if (entry.kind === "drive") {
+            el.onclick = () => load(entry.path);
+            return;
+          }
+          const cb = el.querySelector(".fs-check");
+          cb.onclick = (ev) => {
+            ev.stopPropagation();
+            togglePick(entry);
+          };
+          el.ondblclick = (ev) => {
+            ev.preventDefault();
+            load(entry.path);
+          };
         });
+        refreshPickedUi();
       }
 
       upBtn.onclick = () => load(listing.parent === null ? "" : listing.parent);
@@ -142,17 +166,23 @@
         if (e.target.id === "dlg") close();
       };
       okBtn.onclick = async () => {
-        if (!selected || selected.kind === "drive") {
-          tip("请选择一个文件夹");
+        const paths = [...picked.keys()];
+        if (!paths.length) {
+          tip("请至少勾选一个文件夹");
           return;
         }
-        const res = await ingestAddDir(selected.path);
+        const res = await ingestAddDirs(paths);
         if (!res.ok) {
           tip(res.error || "添加失败");
           return;
         }
         close();
-        tip("已加入监视");
+        const n = res.added?.length || paths.length;
+        tip(
+          res.skipped?.length
+            ? `已加入 ${n} 个，跳过已存在 ${res.skipped.length} 个`
+            : `已加入监视（${n}）`
+        );
         s = await getIngestState();
         paint();
       };

@@ -577,6 +577,7 @@
   color: var(--text);
   cursor: pointer;
   font: inherit;
+  box-sizing: border-box;
 }
 .fs-item:last-child {
   border-bottom: 0;
@@ -588,10 +589,17 @@
   background: var(--accent-soft);
   box-shadow: inset 3px 0 0 var(--accent);
 }
+.fs-check {
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+}
 .fs-ico {
   flex-shrink: 0;
   width: 1.25em;
   text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 .fs-name {
   min-width: 0;
@@ -601,6 +609,9 @@
 }
 .fs-selected {
   margin-bottom: 12px;
+  line-height: 1.45;
+  max-height: 3.2em;
+  overflow: auto;
 }
 .fs-selected strong {
   color: var(--text);
