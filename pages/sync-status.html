@@ -29,6 +29,7 @@
 
     const s = await getIngestState();
     const root = document.getElementById("root");
+    if (!root) throw new Error("缺少 #root");
 
     if (s.phase !== "ready") {
       root.innerHTML = `
@@ -44,103 +45,104 @@
           </div>
         </div>
         <p style="margin-top:14px"><a class="btn btn-primary" href="./ingest-setup.html">去接入向导</a></p>`;
-      return;
-    }
+    } else {
+      const st = s.stats;
+      const health =
+        st.errors > 0 ? "warn" : s.probe.slimSync === "在线" ? "ok" : "warn";
+      const healthText =
+        st.errors > 0 ? "有异常" : s.probe.slimSync === "在线" ? "正常" : "延迟";
 
-    const st = s.stats;
-    const health =
-      st.errors > 0 ? "warn" : s.probe.slimSync === "在线" ? "ok" : "warn";
-    const healthText =
-      st.errors > 0 ? "有异常" : s.probe.slimSync === "在线" ? "正常" : "延迟";
+      let dirs = Array.isArray(s.dirs) ? s.dirs.map((d) => ({ ...d })) : [];
 
-    let dirs = s.dirs.map((d) => ({ ...d }));
-
-    function paintDashAndDirs() {
-      root.innerHTML = `
-        <div class="dash">
-          <div class="dash-health ${health}">
-            <div class="dash-k">进料健康</div>
-            <div class="dash-v">${healthText}</div>
-            <div class="muted small" style="margin-top:6px">探针 ${esc(
-              s.probe.slimSync
-            )} · ${esc(s.probe.version || "")} · 心跳 ${esc(
-              s.probe.lastHeartbeat || "—"
-            )}</div>
+      function paintDashAndDirs() {
+        root.innerHTML = `
+          <div class="dash">
+            <div class="dash-health ${health}">
+              <div class="dash-k">进料健康</div>
+              <div class="dash-v">${healthText}</div>
+              <div class="muted small" style="margin-top:6px">探针 ${esc(
+                s.probe.slimSync
+              )} · ${esc(s.probe.version || "")} · 心跳 ${esc(
+                s.probe.lastHeartbeat || "—"
+              )}</div>
+            </div>
+            <div class="dash-metrics">
+              <div><span class="dash-k">今日进料</span><strong>${esc(
+                st.todayUploaded
+              )}</strong><span class="muted small"> 上传</span></div>
+              <div><span class="dash-k">容量</span><strong>${esc(
+                st.capacityUsed
+              )}</strong><span class="muted small"> / ${esc(
+                st.capacityQuota
+              )}</span></div>
+              <div><span class="dash-k">待处理 / 失败</span><strong>${
+                st.pending
+              } / ${st.errors}</strong></div>
+            </div>
+            ${
+              st.lastError
+                ? `<div class="dash-alert">最近问题：${esc(st.lastError)}</div>`
+                : ""
+            }
           </div>
-          <div class="dash-metrics">
-            <div><span class="dash-k">今日进料</span><strong>${esc(
-              st.todayUploaded
-            )}</strong><span class="muted small"> 上传</span></div>
-            <div><span class="dash-k">容量</span><strong>${esc(
-              st.capacityUsed
-            )}</strong><span class="muted small"> / ${esc(
-              st.capacityQuota
-            )}</span></div>
-            <div><span class="dash-k">待处理 / 失败</span><strong>${
-              st.pending
-            } / ${st.errors}</strong></div>
-          </div>
-          ${
-            st.lastError
-              ? `<div class="dash-alert">最近问题：${esc(st.lastError)}</div>`
-              : ""
-          }
-        </div>
 
-        <div class="deal-section" id="dirs">
-          <div class="toolbar" style="margin-top:18px">
-            <h2 style="margin:0;flex:1">入库目录</h2>
-            <button type="button" class="btn btn-primary" id="save">保存</button>
-          </div>
-          <div id="list"></div>
-        </div>`;
+          <div class="deal-section" id="dirs">
+            <div class="toolbar" style="margin-top:18px">
+              <h2 style="margin:0;flex:1">入库目录</h2>
+              <button type="button" class="btn btn-primary" id="save">保存</button>
+            </div>
+            <div id="list"></div>
+          </div>`;
 
-      const list = document.getElementById("list");
-      list.innerHTML = dirs
-        .map(
-          (d, i) => `<div class="card" style="margin-bottom:8px">
-            <label style="display:flex;gap:10px;align-items:flex-start">
-              <input type="checkbox" data-i="${i}" ${
-            d.enabled ? "checked" : ""
-          } style="margin-top:3px"/>
-              <span>
-                <div class="title">${esc(d.path)}</div>
-                <div class="meta">${esc(d.mode)} · ${d.files} 文件 · ${esc(
-            d.bytes
-          )}
-                  · <span class="pill ${
-                    d.status === "正常" ? "ok" : ""
-                  }">${esc(d.status)}</span></div>
-              </span>
-            </label>
-          </div>`
-        )
-        .join("");
+        const list = document.getElementById("list");
+        list.innerHTML = dirs
+          .map(
+            (d, i) => `<div class="card" style="margin-bottom:8px">
+              <label style="display:flex;gap:10px;align-items:flex-start">
+                <input type="checkbox" data-i="${i}" ${
+              d.enabled ? "checked" : ""
+            } style="margin-top:3px"/>
+                <span>
+                  <div class="title">${esc(d.path)}</div>
+                  <div class="meta">${esc(d.mode)} · ${d.files} 文件 · ${esc(
+              d.bytes
+            )}
+                    · <span class="pill ${
+                      d.status === "正常" ? "ok" : ""
+                    }">${esc(d.status)}</span></div>
+                </span>
+              </label>
+            </div>`
+          )
+          .join("");
 
-      list.querySelectorAll("input[type=checkbox]").forEach((el) => {
-        el.onchange = () => {
-          dirs[+el.dataset.i].enabled = el.checked;
-          dirs[+el.dataset.i].status = el.checked ? "正常" : "未启用";
-        };
-      });
-
-      document.getElementById("save").onclick = async () => {
-        const ok = await confirmDialog({
-          title: "保存入库目录",
-          body: "将按勾选目录开始/停止进料。",
-          confirmText: "保存",
+        list.querySelectorAll("input[type=checkbox]").forEach((el) => {
+          el.onchange = () => {
+            dirs[+el.dataset.i].enabled = el.checked;
+            dirs[+el.dataset.i].status = el.checked ? "正常" : "未启用";
+          };
         });
-        if (!ok) return;
-        await ingestSaveDirs(dirs);
-        const flash = document.getElementById("flash");
-        flash.textContent = "已保存";
-        flash.classList.add("show");
-      };
-    }
 
-    paintDashAndDirs();
-    if (location.hash === "#dirs") {
-      document.getElementById("dirs")?.scrollIntoView({ behavior: "smooth" });
+        document.getElementById("save").onclick = async () => {
+          const ok = await confirmDialog({
+            title: "保存入库目录",
+            body: "将按勾选目录开始/停止进料。",
+            confirmText: "保存",
+          });
+          if (!ok) return;
+          await ingestSaveDirs(dirs);
+          const flash = document.getElementById("flash");
+          if (flash) {
+            flash.textContent = "已保存";
+            flash.classList.add("show");
+          }
+        };
+      }
+
+      paintDashAndDirs();
+      if (location.hash === "#dirs") {
+        document.getElementById("dirs")?.scrollIntoView({ behavior: "smooth" });
+      }
     }
   </script>
 </body>
