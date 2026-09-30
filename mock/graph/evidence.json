@@ -1,0 +1,10 @@
+[
+  {"themeId":"T-041","when":"2026-06-02","file":"售前调研_制氧厂.pptx","seg":"痛点清单","summary":"停机率与工单闭环是首要 KPI"},
+  {"themeId":"T-041","when":"2026-08-18","file":"现场会议纪要_0818.md","seg":"二期接口","summary":"客户明确要求预留 OPC-UA"},
+  {"themeId":"T-041","when":"2026-07-18","file":"实施计划_草案.gantt","seg":"现场 6 周","summary":"含培训与平行运行"},
+  {"themeId":"T-043","when":"2026-09-10","file":"MES-2026-Q3 报价.pdf","seg":"总价","summary":"含实施 128 万"},
+  {"themeId":"T-043","when":"2026-09-20","file":"合同金额差异说明.txt","seg":"差额","summary":"与草案差 8.6 万"},
+  {"themeId":"T-044","when":"2026-09-20","file":"框架协议草案_v3.docx","seg":"签章","summary":"附件位空"},
+  {"themeId":"T-044","when":"2026-09-25","file":"邮件_法务回复_0912.eml","seg":"补件","summary":"无扫描件不继续审"},
+  {"themeId":"T-045","when":"2026-09-27","file":"投诉工单_CX-992.txt","seg":"影响","summary":"产线停工风险被提及"}
+]

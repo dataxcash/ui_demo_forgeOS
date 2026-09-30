@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>设施分层</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="flash" id="flash"></div>
+    <div class="page-head">
+      <h1>设施分层</h1>
+      <p>资源向（Token A）。不见经营账 B，不开人事号。</p>
+    </div>
+    <div id="layers"></div>
+  </div>
+  <script type="module">
+    import { requireAccount, guardPage } from "../js/session.js?v=nav4";
+    import { mountShell } from "../js/shell.js?v=nav4";
+    import { getIt } from "../js/api-mock.js?v=nav4";
+    import { esc } from "../js/esc.js?v=nav4";
+
+    const account = await requireAccount();
+    if (!guardPage(account, ["it"])) throw 0;
+    await mountShell({ account, active: "it" });
+
+    const data = await getIt();
+    document.getElementById("layers").innerHTML = data.layers
+      .map(
+        (l) => `<div class="card">
+          <h2>${esc(l.name)}</h2>
+          <p class="muted small">${esc(l.desc)}</p>
+          <div style="margin-top:8px"><span class="pill ${
+            l.health.includes("失败") || l.health.includes("延迟") ? "warn" : "ok"
+          }">${esc(l.health)}</span>
+          ${l.id === "L4" ? ` · <a href="./it-job.html">看任务</a>` : ""}
+          </div>
+        </div>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

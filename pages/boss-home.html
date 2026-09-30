@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>经营与风险</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="flash" id="flash"></div>
+    <div class="page-head">
+      <h1>经营与风险</h1>
+      <p>第一眼：营收是否正常、哪里要灭火。不是员工矿场操作台。</p>
+    </div>
+    <h2>经营</h2>
+    <div class="grid-2" id="ops" style="margin:12px 0 28px"></div>
+    <h2 id="risks">风险</h2>
+    <div id="risk-list" style="margin-top:12px"></div>
+  </div>
+  <script type="module">
+    import { requireAccount, guardPage } from "../js/session.js?v=nav4";
+    import { mountShell } from "../js/shell.js?v=nav4";
+    import { getBoss } from "../js/api-mock.js?v=nav4";
+    import { esc } from "../js/esc.js?v=nav4";
+
+    const account = await requireAccount();
+    if (!guardPage(account, ["boss"])) throw 0;
+    await mountShell({ account, active: "boss" });
+
+    const data = await getBoss();
+    const o = data.operating;
+    document.getElementById("ops").innerHTML = [o.talking, o.closing, o.drift]
+      .map(
+        (x) => `<div class="card">
+          <div class="stat-label">${esc(x.label)}</div>
+          <div class="stat">${x.count}</div>
+          <div class="muted small">${esc(x.hint)}</div>
+        </div>`
+      )
+      .join("");
+
+    document.getElementById("risk-list").innerHTML = data.risks
+      .map(
+        (r) => `<div class="card">
+          <div>
+            <span class="pill ${r.level === "高" ? "danger" : r.level === "中" ? "warn" : ""}">${esc(r.level)}</span>
+            <strong>${esc(r.title)}</strong>
+          </div>
+          <p class="small muted" style="margin:8px 0">${esc(r.summary)}</p>
+          <div class="small">负责人 ${esc(r.owner)}
+            · <a href="./graph-theme.html?id=${esc(r.themeId)}">看主题摘要</a>
+          </div>
+        </div>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

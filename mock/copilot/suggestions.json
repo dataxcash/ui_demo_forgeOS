@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sk-handover",
+    "roles": ["manager"],
+    "title": "生成交接包草稿",
+    "body": "打包华东制氧厂相关谱系 + 时间线 + 关键料（不含私域）。",
+    "action": "预填并写回",
+    "confirmBody": "生成交接包草稿并写入「我的」待办。须你确认后才落库（Demo）。",
+    "doneText": "交接包草稿已生成（Demo）"
+  },
+  {
+    "id": "sk-hr-all",
+    "roles": ["hr"],
+    "title": "建议勾选全部「正常」行",
+    "body": "可预填勾选；不能绕过总确认开通。",
+    "action": "预填勾选",
+    "confirmBody": "仅预填勾选正常行，仍需你点「确认开通」。",
+    "doneText": "已预填勾选（请再点总确认）"
+  },
+  {
+    "id": "sk-ask",
+    "roles": ["manager", "employee"],
+    "title": "带着图谱上下文去问",
+    "body": "把当前主题缺口带进问句。",
+    "action": "去「问」",
+    "confirmBody": "将打开「问」并预填问题（Demo 直接跳转）。",
+    "doneText": "已打开问（Demo）"
+  },
+  {
+    "id": "sk-boss",
+    "roles": ["boss"],
+    "title": "生成灭火简报",
+    "body": "汇总高风险主题给管理层会。",
+    "action": "生成",
+    "confirmBody": "生成一页灭火简报（Demo 文件）。",
+    "doneText": "灭火简报已生成（Demo）"
+  },
+  {
+    "id": "sk-it",
+    "roles": ["it"],
+    "title": "重跑失败批炼",
+    "body": "仅建议；执行需确认。",
+    "action": "申请重跑",
+    "confirmBody": "将 J-2202 重新入队（Demo）。",
+    "doneText": "已入队重跑（Demo）"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "li.na",
+    "name": "李娜",
+    "title": "销售一组负责人",
+    "role": "manager",
+    "dept": "销售一部"
+  },
+  {
+    "id": "chen.hr",
+    "name": "陈思",
+    "title": "人事主管",
+    "role": "hr",
+    "dept": "人事"
+  },
+  {
+    "id": "zhou.boss",
+    "name": "周衡",
+    "title": "老板",
+    "role": "boss",
+    "dept": "管理层"
+  },
+  {
+    "id": "wu.it",
+    "name": "吴工",
+    "title": "IT 主管",
+    "role": "it",
+    "dept": "信息技术"
+  },
+  {
+    "id": "he.comp",
+    "name": "何审计",
+    "title": "合规",
+    "role": "compliance",
+    "dept": "合规",
+    "stub": true
+  }
+]

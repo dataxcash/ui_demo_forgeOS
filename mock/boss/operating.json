@@ -1,0 +1,5 @@
+{
+  "talking": {"label": "在谈的钱", "count": 7, "hint": "线索 / 售前 / 报价"},
+  "closing": {"label": "将落袋", "count": 3, "hint": "合同推进中 / 临近节点"},
+  "drift": {"label": "可能走样", "count": 2, "hint": "高价值停滞或断档"}
+}

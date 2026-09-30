@@ -1,0 +1,22 @@
+{
+  "batchId": "IMP-20260928",
+  "source": "CSV",
+  "title": "9 月入职批次",
+  "rows": [
+    {"id":"R01","name":"周小白","dept":"销售一部","manager":"李娜","account":"zhou.xb","flag":"正常","flagLabel":"正常"},
+    {"id":"R02","name":"刘可","dept":"销售一部","manager":"李娜","account":"liu.ke","flag":"正常","flagLabel":"正常"},
+    {"id":"R03","name":"李娜","dept":"销售一部","manager":"周衡","account":"li.na2","flag":"dup","flagLabel":"疑似重复"},
+    {"id":"R04","name":"韩梅","dept":"售前","manager":"","account":"han.mei","flag":"miss","flagLabel":"缺上级"},
+    {"id":"R05","name":"曹野","dept":"交付","manager":"未知名","account":"cao.ye","flag":"conflict","flagLabel":"冲突部门"},
+    {"id":"R06","name":"许晴","dept":"销售一部","manager":"李娜","account":"xu.qing","flag":"正常","flagLabel":"正常"},
+    {"id":"R07","name":"冯磊","dept":"信息技术","manager":"吴工","account":"feng.lei","flag":"正常","flagLabel":"正常"},
+    {"id":"R08","name":"沈芳","dept":"人事","manager":"陈思","account":"shen.fang","flag":"正常","flagLabel":"正常"},
+    {"id":"R09","name":"蒋涛","dept":"交付","manager":"","account":"jiang.tao","flag":"miss","flagLabel":"缺上级"},
+    {"id":"R10","name":"白露","dept":"售前","manager":"钱进","account":"bai.lu","flag":"正常","flagLabel":"正常"},
+    {"id":"R11","name":"顾军","dept":"销售一部","manager":"李娜","account":"gu.jun","flag":"正常","flagLabel":"正常"},
+    {"id":"R12","name":"贺兰","dept":"法务","manager":"周衡","account":"he.lan","flag":"正常","flagLabel":"正常"},
+    {"id":"R13","name":"刘可","dept":"销售二部","manager":"李娜","account":"liu.ke.dup","flag":"dup","flagLabel":"疑似重复"},
+    {"id":"R14","name":"莫言","dept":"交付","manager":"未命名经理","account":"mo.yan","flag":"conflict","flagLabel":"冲突部门"},
+    {"id":"R15","name":"欧文","dept":"销售一部","manager":"李娜","account":"ou.wen","flag":"正常","flagLabel":"正常"}
+  ]
+}

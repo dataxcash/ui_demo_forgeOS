@@ -1,0 +1,6 @@
+[
+  {"id":"L1","name":"资源层","desc":"算力节点 / 存储池 / 备份窗口", "health":"正常"},
+  {"id":"L2","name":"核心组件","desc":"slimRAG · slimGraph · orgd", "health":"正常"},
+  {"id":"L3","name":"探针与同步","desc":"slimSync / 邮件前端", "health":"延迟 1 台笔记本"},
+  {"id":"L4","name":"批炼任务 A","desc":"闲时谱系批炼（资源 Token A）", "health":"有失败"}
+]

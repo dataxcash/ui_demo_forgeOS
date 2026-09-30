@@ -1,0 +1,22 @@
+[
+  {"id":"S1","title":"MES-2026-Q3 报价.pdf","snippet":"总价含实施 128 万，有效期 30 天…","themeId":"T-043","kind":"文件"},
+  {"id":"S2","title":"框架协议草案_v3.docx","snippet":"缺附件：签章页；争议解决地…","themeId":"T-044","kind":"文件"},
+  {"id":"S3","title":"现场会议纪要_0818.md","snippet":"客户要求二期接口预留…","themeId":"T-041","kind":"纪要"},
+  {"id":"S4","title":"邮件_法务回复_0912.eml","snippet":"请补签章页扫描件后再审…","themeId":"T-044","kind":"邮件"},
+  {"id":"S5","title":"投诉工单_CX-992.txt","snippet":"到货延迟引发产线停工风险…","themeId":"T-045","kind":"工单"},
+  {"id":"S6","title":"售前调研_制氧厂.pptx","snippet":"现有系统清单与痛点…","themeId":"T-041","kind":"文件"},
+  {"id":"S7","title":"精工阀门_线索卡.md","snippet":"预算窗口 Q4…","themeId":"T-051","kind":"线索"},
+  {"id":"S8","title":"团队周报_0922.md","snippet":"阻塞：法务、投诉…","themeId":"T-041","kind":"纪要"},
+  {"id":"S9","title":"合同金额差异说明.txt","snippet":"报价与草案差 8.6 万…","themeId":"T-043","kind":"文件"},
+  {"id":"S10","title":"二期接口清单.xlsx","snippet":"OPC-UA / 仓储对接…","themeId":"T-041","kind":"文件"},
+  {"id":"S11","title":"客户通讯录_华东.xlsx","snippet":"对口：王厂长 / 信息科…","themeId":"T-042","kind":"文件"},
+  {"id":"S12","title":"验收标准草稿.docx","snippet":"KPI：停机率 / 工单闭环…","themeId":"T-041","kind":"文件"},
+  {"id":"S13","title":"竞品对比_简版.pdf","snippet":"三家短名单…","themeId":"T-052","kind":"文件"},
+  {"id":"S14","title":"开票资料清单.md","snippet":"待客户提供开票信息…","themeId":"T-053","kind":"文件"},
+  {"id":"S15","title":"实施计划_草案.gantt","snippet":"现场 6 周…","themeId":"T-041","kind":"文件"},
+  {"id":"S16","title":"风险登记_销售一部.csv","snippet":"法务耗时、投诉升温…","themeId":"T-045","kind":"文件"},
+  {"id":"S17","title":"孙悦_拜访记录.md","snippet":"老板陪见一次…","themeId":"T-054","kind":"纪要"},
+  {"id":"S18","title":"钱进_技术方案v2.pdf","snippet":"边缘采集方案…","themeId":"T-041","kind":"文件"},
+  {"id":"S19","title":"历史合同_2019.pdf","snippet":"旧框架可参考条款…","themeId":"T-042","kind":"文件"},
+  {"id":"S20","title":"内部评审录音摘要.txt","snippet":"报价策略讨论…","themeId":"T-043","kind":"摘要"}
+]

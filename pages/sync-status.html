@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>文档入库 · 运行状态</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="page-head">
+      <h1>运行状态</h1>
+      <p>文档入库：本机与目录同步是否正常、今日统计。入库流程细则另专项讨论。</p>
+    </div>
+    <div class="grid-2" id="stats" style="margin-bottom:12px"></div>
+    <h2>设备与目录</h2>
+    <div id="devices" style="margin-top:8px"></div>
+  </div>
+  <script type="module">
+    import { requireAccount } from "../js/session.js?v=nav4";
+    import { mountShell } from "../js/shell.js?v=nav4";
+    import { esc } from "../js/esc.js?v=nav4";
+
+    const account = await requireAccount();
+    await mountShell({ account, active: "sync-status" });
+
+    const data = await (await fetch("../mock/sync/overview.json")).json();
+    const s = data.stats;
+    document.getElementById("stats").innerHTML = `
+      <div class="card"><div class="stat-label">今日上传</div><div class="stat" style="font-size:18px">${esc(s.todayUploaded)}</div></div>
+      <div class="card"><div class="stat-label">今日下载</div><div class="stat" style="font-size:18px">${esc(s.todayDownloaded)}</div></div>
+      <div class="card"><div class="stat-label">待处理</div><div class="stat" style="font-size:18px">${s.pending}</div></div>
+      <div class="card"><div class="stat-label">异常</div><div class="stat" style="font-size:18px">${s.errors}</div>
+        <p class="muted small" style="margin:6px 0 0">${esc(s.lastError || "")}</p></div>`;
+
+    document.getElementById("devices").innerHTML = data.devices
+      .map((d) => {
+        const cls = d.status === "正常" ? "ok" : "warn";
+        return `<div class="card">
+          <div><strong>${esc(d.name)}</strong> <span class="pill ${cls}">${esc(d.status)}</span>
+            <span class="muted small">${esc(d.os)} · 最近同步 ${esc(d.lastSync)}</span></div>
+          <table class="table" style="margin-top:8px;border:0">
+            <thead><tr><th>目录</th><th>模式</th><th>文件数</th><th>容量</th></tr></thead>
+            <tbody>${d.paths
+              .map(
+                (p) => `<tr>
+                  <td class="small">${esc(p.path)}</td>
+                  <td>${esc(p.mode)}</td>
+                  <td>${p.files}</td>
+                  <td>${esc(p.bytes)}</td>
+                </tr>`
+              )
+              .join("")}</tbody>
+          </table>
+        </div>`;
+      })
+      .join("");
+  </script>
+</body>
+</html>

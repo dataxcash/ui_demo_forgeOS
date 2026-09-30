@@ -1,0 +1,7 @@
+[
+  {"id":"RK1","level":"高","title":"MES 报价卡法务 12 天","owner":"李娜","themeId":"T-043","summary":"金额差未消，签章页未到，链条停在法务。"},
+  {"id":"RK2","level":"高","title":"现场延迟投诉升温","owner":"孙悦","themeId":"T-045","summary":"已提产线停工风险，客服主题状态升温。"},
+  {"id":"RK3","level":"中","title":"合同金额说法不一致","owner":"李娜","themeId":"T-044","summary":"报价与草案差 8.6 万，缺口未清。"},
+  {"id":"RK4","level":"中","title":"交付排期与承诺冲突","owner":"李娜","themeId":"T-055","summary":"销售承诺日期与交付计划不一致。"},
+  {"id":"RK5","level":"低","title":"续维谈判偏慢","owner":"赵强","themeId":"T-056","summary":"老客户续签超过常规窗口。"}
+]

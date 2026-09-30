@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>这一单 · aiSpace</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav6" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav6" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav6" />
+</head>
+<body>
+  <div id="page-root">
+    <p class="muted small"><a href="./my-deals.html">← 我的单</a></p>
+    <div class="page-head" id="head"></div>
+    <p class="crm-note" id="crm" style="margin:0 0 12px;padding:8px 10px;border:1px solid var(--line);background:var(--surface)"></p>
+
+    <section class="deal-section">
+      <h2>现在怎样</h2>
+      <div class="deal-summary" id="summary-block"></div>
+    </section>
+
+    <section class="deal-section">
+      <h2>最近进展</h2>
+      <div id="timeline" class="timeline"></div>
+    </section>
+
+    <section class="deal-section">
+      <h2>就这一单问</h2>
+      <p class="muted small" style="margin:0 0 8px">五类标准问法优先；出处可点开。材料没有的不会编。</p>
+      <div class="hint-row" id="hints"></div>
+      <div class="ask-box">
+        <input id="q" placeholder="现在怎样 / 口径依据 / 该催什么 / 缺什么材料 / 找谁" />
+        <button class="btn btn-primary" id="btn-ask" type="button">提问</button>
+      </div>
+      <div id="answer"></div>
+    </section>
+  </div>
+  <script type="module">
+    import { requireAccount, guardPage } from "../js/session.js?v=nav6";
+    import { mountShell } from "../js/shell.js?v=nav6";
+    import { getDeal, askDeal } from "../js/api-mock.js?v=nav6";
+    import { esc } from "../js/esc.js?v=nav6";
+    import { CRM_BOUNDARY } from "../js/deal-rules.js?v=nav6";
+
+    const account = await requireAccount();
+    if (!guardPage(account, ["employee", "manager", "boss"])) throw 0;
+    await mountShell({ account, active: "my-deals" });
+    document.getElementById("crm").textContent = CRM_BOUNDARY;
+
+    const id = new URLSearchParams(location.search).get("id") || "T-043";
+    const pack = await getDeal(id);
+    if (!pack) {
+      document.getElementById("head").innerHTML = `<h1>找不到这一单</h1>`;
+      throw 0;
+    }
+    const { deal, timeline, evidence } = pack;
+
+    function materialHref(e) {
+      return `./material.html?deal=${encodeURIComponent(id)}&file=${encodeURIComponent(
+        e.file
+      )}&seg=${encodeURIComponent(e.seg || "")}&summary=${encodeURIComponent(
+        e.summary || ""
+      )}`;
+    }
+
+    document.title = `${deal.name} · aiSpace`;
+    document.getElementById("head").innerHTML = `
+      <h1>${esc(deal.name)}</h1>
+      <p>
+        <span class="pill">${esc(deal.type)}</span>
+        <span class="pill ${deal.open ? "warn" : "ok"}">${esc(deal.status)}</span>
+        ${deal.bucket ? `<span class="pill">${esc(deal.bucket)}</span>` : ""}
+        · 负责人 ${esc(deal.owner)}
+        · ${deal.open ? esc(deal.why) : "已完成"}
+      </p>
+      ${
+        deal.ruleHit
+          ? `<p class="muted small" style="margin-top:6px">入桶依据：${esc(deal.ruleHit)}</p>`
+          : ""
+      }`;
+
+    const matLinks = evidence.length
+      ? `<div class="mat-inline"><span class="muted">相关材料：</span>${evidence
+          .map(
+            (e) =>
+              `<a href="${materialHref(e)}">${esc(e.file)}</a><span class="muted">（${esc(
+                e.seg
+              )}）</span>`
+          )
+          .join(" ")}</div>`
+      : `<div class="mat-inline muted">暂无已关联材料</div>`;
+
+    document.getElementById("summary-block").innerHTML = `
+      <p style="margin:0">${esc(deal.summary)}</p>
+      ${matLinks}`;
+
+    const byWhen = {};
+    evidence.forEach((e) => {
+      if (!e.when) return;
+      (byWhen[e.when] || (byWhen[e.when] = [])).push(e);
+    });
+    const events = [...timeline].sort((a, b) => (a.when < b.when ? 1 : -1));
+
+    document.getElementById("timeline").innerHTML = events.length
+      ? events
+          .map((e) => {
+            const mats = byWhen[e.when] || [];
+            const matHtml = mats.length
+              ? `<div class="ev-mats">${mats
+                  .map(
+                    (m) =>
+                      `<a href="${materialHref(m)}">${esc(m.file)}</a><span class="muted"> · ${esc(
+                        m.summary
+                      )}</span>`
+                  )
+                  .join("<br/>")}</div>`
+              : "";
+            return `<div class="ev">
+              <div class="when">${esc(e.when)}</div>
+              <div>${esc(e.text)}</div>
+              ${matHtml}
+            </div>`;
+          })
+          .join("")
+      : `<div class="empty">暂无进展记录</div>`;
+
+    const hints = [
+      "现在卡在哪？",
+      "客户说过的有依据吗？",
+      "这一单该催什么？",
+      "还缺什么材料？",
+      "这单找谁？",
+    ];
+    document.getElementById("hints").innerHTML = hints
+      .map((h) => `<button type="button" class="btn" data-hint="${esc(h)}">${esc(h)}</button>`)
+      .join(" ");
+
+    function citeHtml(c) {
+      if (c.href) {
+        return `<div class="citation"><a class="file-link" href="${esc(c.href)}">${esc(
+          c.file
+        )}</a>${c.seg ? ` · ${esc(c.seg)}` : ""}<br/>${esc(c.summary || "")}</div>`;
+      }
+      return `<div class="citation"><strong>${esc(c.file)}</strong>${
+        c.seg ? ` · ${esc(c.seg)}` : ""
+      }<br/>${esc(c.summary || "")}</div>`;
+    }
+
+    async function runAsk(q) {
+      const res = await askDeal(id, q);
+      document.getElementById("answer").innerHTML = `
+        <div class="card ask-answer" style="margin-top:10px">
+          <div class="muted small">答案</div>
+          <p class="lead">${esc(res.answer)}</p>
+          ${res.next ? `<div class="next">${esc(res.next)}</div>` : ""}
+          ${
+            res.citations && res.citations.length
+              ? `<div style="margin-top:10px"><div class="muted small">出处（点击查阅）</div>${res.citations
+                  .map(citeHtml)
+                  .join("")}</div>`
+              : ""
+          }
+        </div>`;
+    }
+
+    document.getElementById("hints").onclick = (e) => {
+      const b = e.target.closest("[data-hint]");
+      if (!b) return;
+      document.getElementById("q").value = b.dataset.hint;
+      runAsk(b.dataset.hint);
+    };
+    document.getElementById("btn-ask").onclick = () =>
+      runAsk(document.getElementById("q").value);
+    document.getElementById("q").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        runAsk(document.getElementById("q").value);
+      }
+    });
+  </script>
+</body>
+</html>

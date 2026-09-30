@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的 · ForgeOS WebUI</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="page-head">
+      <h1>我的</h1>
+      <p>个人材料与空间入口。文件同步已独立为「文件同步」模块（与 aiSpace 平级）。</p>
+    </div>
+    <div class="card">
+      <h2>个人材料</h2>
+      <p class="muted small">权限内「我相关的」材料入口；深挖请用关系图谱 / 搜。</p>
+    </div>
+    <div class="card" style="margin-top:8px">
+      <h2>文件同步</h2>
+      <p class="muted small">设置、运行状态与统计请使用左侧 <strong>文件同步</strong> App。</p>
+      <p style="margin-top:8px">
+        <a class="btn" href="./sync-status.html">运行状态</a>
+        <a class="btn" href="./sync-settings.html" style="margin-left:6px">同步设置</a>
+      </p>
+    </div>
+  </div>
+  <script type="module">
+    import { requireAccount, guardPage } from "../js/session.js?v=nav4";
+    import { mountShell } from "../js/shell.js?v=nav4";
+    const account = await requireAccount();
+    if (!guardPage(account, ["employee", "manager"])) throw 0;
+    await mountShell({ account, active: "me" });
+  </script>
+</body>
+</html>

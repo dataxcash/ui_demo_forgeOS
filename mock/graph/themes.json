@@ -1,0 +1,14 @@
+[
+  {"id":"T-041","name":"华东制氧厂 · MES 升级","type":"项目","status":"售前推进","owner":"李娜","updated":"2026-09-28"},
+  {"id":"T-042","name":"华东制氧厂","type":"客户","status":"活跃","owner":"李娜","updated":"2026-09-27"},
+  {"id":"T-043","name":"MES-2026-Q3 报价","type":"报价","status":"待法务","owner":"李娜","updated":"2026-09-22"},
+  {"id":"T-044","name":"框架协议草案","type":"合同","status":"缺签章页","owner":"李娜","updated":"2026-09-25"},
+  {"id":"T-045","name":"现场延迟投诉","type":"客服","status":"升温","owner":"孙悦","updated":"2026-09-29"},
+  {"id":"T-051","name":"精工阀门 · 线索","type":"线索","status":"跟进中","owner":"赵强","updated":"2026-09-26"},
+  {"id":"T-052","name":"海州能源 · 售前","type":"售前","status":"调研","owner":"孙悦","updated":"2026-09-20"},
+  {"id":"T-053","name":"开票资料催收","type":"任务","status":"等待客户","owner":"赵强","updated":"2026-09-18"},
+  {"id":"T-054","name":"滨江玻璃 · 拜访","type":"客户","status":"初访","owner":"孙悦","updated":"2026-09-15"},
+  {"id":"T-055","name":"内部交付排期冲突","type":"任务","status":"协调中","owner":"李娜","updated":"2026-09-21"},
+  {"id":"T-056","name":"老客户续维 · 三厂","type":"合同","status":"续签谈判","owner":"赵强","updated":"2026-09-12"},
+  {"id":"T-057","name":"展会线索清洗","type":"线索","status":"批炼中","owner":"李娜","updated":"2026-09-29"}
+]

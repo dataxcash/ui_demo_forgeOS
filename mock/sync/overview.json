@@ -1,0 +1,36 @@
+{
+  "devices": [
+    {
+      "id": "pc-work",
+      "name": "工作机",
+      "os": "Windows 11",
+      "status": "正常",
+      "lastSync": "2026-09-30 08:12",
+      "paths": [
+        { "path": "D:\\项目资料", "mode": "双向", "files": 12840, "bytes": "42.6 GB" }
+      ]
+    },
+    {
+      "id": "laptop",
+      "name": "笔记本",
+      "os": "Windows 11",
+      "status": "延迟",
+      "lastSync": "2026-09-28 19:40",
+      "paths": [
+        { "path": "C:\\Users\\me\\Desktop\\临时", "mode": "仅上传", "files": 860, "bytes": "1.2 GB" }
+      ]
+    }
+  ],
+  "stats": {
+    "todayUploaded": "128 MB",
+    "todayDownloaded": "36 MB",
+    "pending": 14,
+    "errors": 1,
+    "lastError": "笔记本「临时」目录权限拒绝 1 个文件"
+  },
+  "settings": {
+    "autoStart": true,
+    "bandwidthLimit": "不限制",
+    "exclude": ["*.tmp", "node_modules", ".git"]
+  }
+}

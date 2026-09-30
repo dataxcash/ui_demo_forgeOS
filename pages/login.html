@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>登录 · ForgeOS WebUI</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="logo" id="logo">ForgeOS WebUI</div>
+      <p class="sub" id="sub">选择账户进入（一账户一 ROLE；兼岗请切换账户）</p>
+      <div class="account-picks" id="picks"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { loadAccounts, setAccountId, homeFor, getAccountId } from "../js/session.js?v=nav4";
+    import { loadI18n, t } from "../js/i18n.js?v=nav4";
+    import { esc } from "../js/esc.js?v=nav4";
+
+    await loadI18n("zh-CN");
+    document.getElementById("logo").textContent = t("login.title");
+    document.getElementById("sub").textContent = t("login.sub");
+    document.title = t("login.title");
+
+    const existing = getAccountId();
+    if (existing) {
+      const accounts = await loadAccounts();
+      const a = accounts.find((x) => x.id === existing && !x.stub);
+      if (a) location.replace(homeFor(a));
+    }
+
+    const accounts = await loadAccounts();
+    const picks = document.getElementById("picks");
+    picks.innerHTML = accounts
+      .filter((a) => !a.stub)
+      .map(
+        (a) => `<button type="button" data-id="${esc(a.id)}">
+          ${esc(a.name)}
+          <span class="role">${esc(a.title)} · ${esc(a.id)}</span>
+        </button>`
+      )
+      .join("");
+    picks.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-id]");
+      if (!btn) return;
+      const a = accounts.find((x) => x.id === btn.dataset.id);
+      setAccountId(a.id);
+      location.href = homeFor(a);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[
+  {"themeId":"T-041","kind":"客户","name":"华东制氧厂","ref":"T-042"},
+  {"themeId":"T-041","kind":"报价","name":"MES-2026-Q3 报价","ref":"T-043"},
+  {"themeId":"T-041","kind":"合同","name":"框架协议草案","ref":"T-044"},
+  {"themeId":"T-041","kind":"人","name":"李娜（负责）","ref":null},
+  {"themeId":"T-041","kind":"人","name":"钱进（售前）","ref":null},
+  {"themeId":"T-041","kind":"人","name":"王厂长（客户）","ref":null},
+  {"themeId":"T-043","kind":"项目","name":"MES 升级","ref":"T-041"},
+  {"themeId":"T-043","kind":"缺口","name":"与草案差额 8.6 万","ref":"T-044"},
+  {"themeId":"T-044","kind":"项目","name":"MES 升级","ref":"T-041"},
+  {"themeId":"T-044","kind":"缺口","name":"缺签章页","ref":null},
+  {"themeId":"T-045","kind":"客户","name":"华东制氧厂","ref":"T-042"},
+  {"themeId":"T-045","kind":"人","name":"孙悦","ref":null}
+]

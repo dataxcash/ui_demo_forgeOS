@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ai工具 · ForgeOS</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="page-head">
+      <h1>ai工具</h1>
+      <p>系统模型与基础能力（OCR / ASR / TTS / 内容分析等）。与跟单工作台分开；具体调用入口后续按场景挂载。</p>
+    </div>
+    <div id="list" class="grid-2"></div>
+  </div>
+  <script type="module">
+    import { requireAccount } from "../js/session.js?v=nav4";
+    import { mountShell } from "../js/shell.js?v=nav4";
+    import { getAiTools } from "../js/api-mock.js?v=nav4";
+    import { esc } from "../js/esc.js?v=nav4";
+
+    const account = await requireAccount();
+    await mountShell({ account, active: "ai-tools" });
+
+    const tools = await getAiTools();
+    document.getElementById("list").innerHTML = tools
+      .map(
+        (t) => `<div class="card">
+          <div class="title">${esc(t.name)}</div>
+          <p class="small" style="margin:8px 0">${esc(t.desc)}</p>
+          <span class="pill ok">${esc(t.status)}</span>
+        </div>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

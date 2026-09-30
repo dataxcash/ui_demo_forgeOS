@@ -1,0 +1,10 @@
+[
+  {"id":"C-01","name":"疑似：制氧厂二期意向","type":"线索","suggestedOwner":"李娜","reason":"邮件与纪要多次共现，尚未建主题","confidence":0.86},
+  {"id":"C-02","name":"海州能源 · 竞品对比收口","type":"售前","suggestedOwner":"孙悦","reason":"三份材料指向同一决策会","confidence":0.78},
+  {"id":"C-03","name":"开票信息缺失提醒","type":"任务","suggestedOwner":"赵强","reason":"合同边存在、开票材料空","confidence":0.81},
+  {"id":"C-04","name":"老客户续维条款变更","type":"合同","suggestedOwner":"赵强","reason":"新旧合同关键句冲突","confidence":0.74},
+  {"id":"C-05","name":"展会名片 · 未清洗 12 条","type":"线索","suggestedOwner":"李娜","reason":"批炼建议合并为线索池","confidence":0.69},
+  {"id":"C-06","name":"交付排期与销售承诺冲突","type":"任务","suggestedOwner":"李娜","reason":"两份计划日期不一致","confidence":0.88},
+  {"id":"C-07","name":"信息科对接人变更","type":"客户","suggestedOwner":"李娜","reason":"通讯录与最近邮件署名不同","confidence":0.72},
+  {"id":"C-08","name":"培训验收条目待补","type":"任务","suggestedOwner":"孙悦","reason":"验收标准草稿缺培训节","confidence":0.77}
+]
