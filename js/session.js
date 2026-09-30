@@ -49,8 +49,7 @@ export function homeFor(account) {
 function ingestApp(account) {
   const items = [
     { href: "./ingest-setup.html", labelKey: "nav.ingestSetup", key: "ingest-setup" },
-    { href: "./sync-status.html", labelKey: "nav.ingestOverview", key: "sync-status" },
-    { href: "./ingest-dirs.html", labelKey: "nav.ingestDirs", key: "ingest-dirs" },
+    { href: "./sync-status.html", labelKey: "nav.ingestManage", key: "sync-status" },
   ];
   if (account.role === "it") {
     items.push({

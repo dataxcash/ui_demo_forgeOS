@@ -4,140 +4,180 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>接入向导 · 文档入库</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav7" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav7" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav7" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav8" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav8" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav8" />
 </head>
 <body>
   <div id="page-root">
     <div class="flash" id="flash"></div>
     <div class="page-head">
-      <h1>接入向导（Windows）</h1>
-      <p>先装 Rust SSHD 引导服务 → 一次性管理员授权 → 系统建专户并装 slimSync。专户对你无感；管理员口令不落库。</p>
+      <h1>接入向导</h1>
+      <p>按步骤完成接入。每一步只做一件事。</p>
     </div>
-    <div class="rules-box" style="margin-bottom:12px">
-      <div class="rules-title">和 Linux 怎么对齐</div>
-      <p style="margin:0">引导面 = SSH。装好 SSHD 并建好专户后，envPD 对 Win/Linux 同一套管理路径。</p>
-    </div>
-    <ol class="wizard" id="wizard"></ol>
+    <div id="panel"></div>
   </div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav7";
-    import { mountShell } from "../js/shell.js?v=nav7";
+    import { requireAccount } from "../js/session.js?v=nav8";
+    import { mountShell } from "../js/shell.js?v=nav8";
     import {
       getIngestState,
       ingestMarkBootstrapInstalled,
       ingestSubmitAdmin,
       ingestMarkProbeReady,
-    } from "../js/api-mock.js?v=nav7";
-    import { esc } from "../js/esc.js?v=nav7";
+    } from "../js/api-mock.js?v=nav8";
+    import { esc } from "../js/esc.js?v=nav8";
 
     const account = await requireAccount();
     await mountShell({ account, active: "ingest-setup" });
 
     const flash = document.getElementById("flash");
-    function tip(msg) {
-      flash.textContent = msg;
+    const tip = (m) => {
+      flash.textContent = m;
       flash.classList.add("show");
-    }
+    };
+
+    // 演示：检测结果固定为 Win（正式环境由后台探测）
+    const detected = { osType: "Windows", osDetail: "Windows 11", host: "本机" };
 
     async function paint() {
       const s = await getIngestState();
-      const step1Done = s.bootstrap.installed;
-      const step2Done = s.adminAuth.done;
-      const step3Done = s.phase === "ready";
+      const panel = document.getElementById("panel");
 
-      document.getElementById("wizard").innerHTML = `
-        <li class="wizard-step ${step1Done ? "done" : "current"}">
-          <h3>① 安装引导服务（Rust SSHD）</h3>
-          <p class="muted small">开机自启。未检测到不得进入下一步。演示包：${esc(
-            s.bootstrap.downloadName
-          )} · 端口 ${s.bootstrap.port}</p>
-          ${
-            step1Done
-              ? `<p class="pill ok">已检测到 · 最近 ${esc(s.bootstrap.lastSeen || "—")}</p>`
-              : `<div class="toolbar">
-                  <button type="button" class="btn btn-primary" id="btn-dl">下载安装包（演示）</button>
-                  <button type="button" class="btn" id="btn-boot">我已安装，刷新检测</button>
-                </div>`
-          }
-        </li>
-        <li class="wizard-step ${!step1Done ? "locked" : step2Done ? "done" : "current"}">
-          <h3>② 一次性管理员授权</h3>
-          <p class="muted small">${esc(
-            s.adminAuth.note
-          )}。用于创建入库专户；之后 SSH 走专户，你无感。</p>
-          ${
-            !step1Done
-              ? `<p class="muted">请先完成①</p>`
-              : step2Done
-                ? `<p class="pill ok">已授权 · 专户已由系统创建（界面不展示口令）</p>`
-                : `<div class="card" style="max-width:420px">
-                    <label class="muted small">本机管理员账户</label>
-                    <input id="adm-user" style="width:100%;margin:4px 0 10px;padding:7px 8px;border:1px solid var(--line)" placeholder="Administrator 或域管账户" />
-                    <label class="muted small">密码（不保存）</label>
-                    <input id="adm-pass" type="password" style="width:100%;margin:4px 0 10px;padding:7px 8px;border:1px solid var(--line)" />
-                    <button type="button" class="btn btn-primary" id="btn-admin">授权并创建专户</button>
-                  </div>`
-          }
-        </li>
-        <li class="wizard-step ${!step2Done ? "locked" : step3Done ? "done" : "current"}">
-          <h3>③ envPD 安装 slimSync（Win 版）</h3>
-          <p class="muted small">经 SSH 安装探针；UI 反馈状态。专户已用于连接。</p>
-          <p>探针：<span class="pill ${
-            s.probe.slimSync === "在线" ? "ok" : s.probe.slimSync === "安装中" ? "warn" : ""
-          }">${esc(s.probe.slimSync)}</span>
-          ${s.probe.version ? ` · ${esc(s.probe.version)}` : ""}
-          ${s.probe.lastHeartbeat ? ` · 心跳 ${esc(s.probe.lastHeartbeat)}` : ""}</p>
-          ${
-            step2Done && !step3Done
-              ? `<button type="button" class="btn btn-primary" id="btn-probe">刷新探针状态（演示：标记就绪）</button>`
-              : ""
-          }
-          ${
-            step3Done
-              ? `<p class="toolbar"><a class="btn btn-primary" href="./ingest-dirs.html">去配置同步目录</a>
-                 <a class="btn" href="./sync-status.html">看进料概况</a></p>`
-              : ""
-          }
-        </li>
-        <li class="wizard-step ${step3Done ? "done" : "locked"}">
-          <h3>④ 配置目录并查看结果</h3>
-          <p class="muted small">在「同步目录」「进料概况」完成。邮件/社交提取不在本向导。</p>
-        </li>`;
+      // 步序：1 检测 → 2 Win 下载说明 → 3 连通+账密 → 4 进度 → 5 结果
+      let step = 1;
+      if (!s.bootstrap.installed) step = detected.osType === "Windows" ? 2 : 3;
+      // 未装：Win 停在 2；已装未授权：3；授权未就绪：4；就绪：5
+      if (s.bootstrap.installed && !s.adminAuth.done) step = 3;
+      if (s.adminAuth.done && s.phase !== "ready") step = 4;
+      if (s.phase === "ready") step = 5;
+      if (!s.bootstrap.installed && detected.osType === "Windows") step = 2;
+      if (!s.bootstrap.installed && detected.osType !== "Windows") step = 3;
 
-      const dl = document.getElementById("btn-dl");
-      if (dl)
-        dl.onclick = () => tip("演示环境：请视为已下载 " + s.bootstrap.downloadName);
-      const boot = document.getElementById("btn-boot");
-      if (boot)
-        boot.onclick = async () => {
+      // 始终先露出检测结果条
+      const detectBar = `
+        <div class="card" style="margin-bottom:12px">
+          <div class="muted small">系统类型（检测结果）</div>
+          <div style="font-size:16px;font-weight:600;margin-top:4px">${esc(
+            detected.osType
+          )} <span class="muted" style="font-weight:400;font-size:13px">· ${esc(
+            detected.osDetail
+          )} · ${esc(detected.host)}</span></div>
+        </div>`;
+
+      if (step === 2) {
+        panel.innerHTML =
+          detectBar +
+          `<div class="card">
+            <h2 style="margin:0 0 8px;font-size:14px">安装连接服务</h2>
+            <p style="margin:0 0 10px">请下载并安装本机连接服务，安装后保持运行，再继续。</p>
+            <p class="muted small" style="margin:0 0 12px">连接地址：本机 · 端口 ${
+              s.bootstrap.port
+            } · 安装包：${esc(s.bootstrap.downloadName)}</p>
+            <div class="toolbar">
+              <button type="button" class="btn btn-primary" id="btn-dl">下载安装包</button>
+              <button type="button" class="btn" id="btn-check">我已安装，检查连通</button>
+            </div>
+          </div>`;
+        document.getElementById("btn-dl").onclick = () =>
+          tip("已开始下载（演示）");
+        document.getElementById("btn-check").onclick = async () => {
           await ingestMarkBootstrapInstalled();
-          tip("已检测到引导服务（演示）");
+          tip("连通正常");
           paint();
         };
-      const adm = document.getElementById("btn-admin");
-      if (adm)
-        adm.onclick = async () => {
+        return;
+      }
+
+      if (step === 3) {
+        panel.innerHTML =
+          detectBar +
+          `<div class="card" style="max-width:440px">
+            <h2 style="margin:0 0 8px;font-size:14px">连接本机</h2>
+            <p class="muted small" style="margin:0 0 12px">连通性：<span class="pill ok">已连通</span></p>
+            <label class="muted small">账户</label>
+            <input id="adm-user" style="width:100%;margin:4px 0 10px;padding:7px 8px;border:1px solid var(--line)" placeholder="本机管理员账户" />
+            <label class="muted small">密码</label>
+            <input id="adm-pass" type="password" style="width:100%;margin:4px 0 8px;padding:7px 8px;border:1px solid var(--line)" />
+            <p class="muted small" style="margin:0 0 12px">说明：账户与密码仅本次接入使用，用于完成本机部署；系统不会保存你的管理员密码。</p>
+            <button type="button" class="btn btn-primary" id="btn-admin">开始部署</button>
+          </div>`;
+        document.getElementById("btn-admin").onclick = async () => {
           const u = document.getElementById("adm-user").value.trim();
           const p = document.getElementById("adm-pass").value;
           if (!u || !p) {
-            tip("请输入管理员账户和密码（演示不校验真伪，但不许空）");
+            tip("请填写账户和密码");
             return;
           }
           document.getElementById("adm-pass").value = "";
           await ingestSubmitAdmin(u, p);
-          tip("已用管理员一次性授权：专户已创建；口令未保存。正在经 SSH 装 slimSync…");
           paint();
         };
-      const probe = document.getElementById("btn-probe");
-      if (probe)
-        probe.onclick = async () => {
-          await ingestMarkProbeReady();
-          tip("slimSync 已在线（演示）");
-          paint();
-        };
+        return;
+      }
+
+      if (step === 4) {
+        panel.innerHTML =
+          detectBar +
+          `<div class="card">
+            <h2 style="margin:0 0 8px;font-size:14px">正在安装与部署</h2>
+            <div class="progress-list" id="prog">
+              <div class="prog-item run">准备环境…</div>
+              <div class="prog-item">创建服务账户…</div>
+              <div class="prog-item">安装同步组件…</div>
+              <div class="prog-item">校验运行状态…</div>
+            </div>
+          </div>`;
+        if (!window.__ingestProgRunning) {
+          window.__ingestProgRunning = true;
+          runProgress();
+        }
+        return;
+      }
+
+      // step 5
+      panel.innerHTML =
+        detectBar +
+        `<div class="card">
+          <h2 style="margin:0 0 8px;font-size:14px">接入结果</h2>
+          <p style="margin:0 0 8px"><span class="pill ok">成功</span> 本机已接入，可以管理入库目录与查看运行情况。</p>
+          <p class="muted small" style="margin:0 0 12px">同步组件 ${esc(
+            s.probe.version || ""
+          )} · 状态 ${esc(s.probe.slimSync)} · 心跳 ${esc(
+            s.probe.lastHeartbeat || "—"
+          )}</p>
+          <a class="btn btn-primary" href="./sync-status.html">进入入库管理</a>
+        </div>`;
     }
+
+    async function runProgress() {
+      const labels = [
+        "准备环境…",
+        "创建服务账户…",
+        "安装同步组件…",
+        "校验运行状态…",
+      ];
+      for (let i = 0; i < labels.length; i++) {
+        await new Promise((r) => setTimeout(r, 550));
+        const box = document.getElementById("prog");
+        if (!box) break;
+        box.innerHTML = labels
+          .map((t, j) => {
+            let cls = "";
+            if (j < i) cls = "done";
+            if (j === i) cls = "run";
+            return `<div class="prog-item ${cls}">${esc(t)}${
+              j < i ? " 完成" : ""
+            }</div>`;
+          })
+          .join("");
+      }
+      await ingestMarkProbeReady();
+      window.__ingestProgRunning = false;
+      tip("部署完成");
+      paint();
+    }
+
     paint();
   </script>
 </body>

@@ -481,3 +481,78 @@
 .wizard-step.current {
   box-shadow: inset 3px 0 0 var(--accent);
 }
+
+/* 入库管理 Dashboard */
+.dash {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 14px 16px;
+}
+.dash-health {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.dash-health.ok .dash-v {
+  color: var(--ok);
+}
+.dash-health.warn .dash-v {
+  color: var(--warn);
+}
+.dash-k {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.dash-v {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.dash-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.dash-metrics strong {
+  display: inline-block;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.dash-alert {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 12px;
+  color: var(--warn);
+}
+@media (max-width: 720px) {
+  .dash-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.prog-item {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.prog-item.run {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+.prog-item.done {
+  color: var(--ok);
+}

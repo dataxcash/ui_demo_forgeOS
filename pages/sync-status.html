@@ -3,63 +3,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>进料概况 · 文档入库</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav7" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav7" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav7" />
+  <title>入库管理 · 文档入库</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav8" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav8" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav8" />
 </head>
 <body>
   <div id="page-root">
+    <div class="flash" id="flash"></div>
     <div class="page-head">
-      <h1>进料概况</h1>
-      <p>本机进料量、容量与探针状态。未走完接入向导时，请先完成安装与授权。</p>
+      <h1>入库管理</h1>
+      <p>本机入库运行看板；目录在此管理。</p>
     </div>
-    <div id="gate"></div>
-    <div class="grid-2" id="stats" style="margin-bottom:12px"></div>
-    <h2>探针</h2>
-    <div id="probe" style="margin-top:8px"></div>
+    <div id="root"></div>
   </div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav7";
-    import { mountShell } from "../js/shell.js?v=nav7";
-    import { getIngestState } from "../js/api-mock.js?v=nav7";
-    import { esc } from "../js/esc.js?v=nav7";
+    import { requireAccount } from "../js/session.js?v=nav8";
+    import { mountShell } from "../js/shell.js?v=nav8";
+    import { getIngestState, ingestSaveDirs } from "../js/api-mock.js?v=nav8";
+    import { confirmDialog } from "../js/confirm.js?v=nav8";
+    import { esc } from "../js/esc.js?v=nav8";
 
     const account = await requireAccount();
     await mountShell({ account, active: "sync-status" });
 
     const s = await getIngestState();
+    const root = document.getElementById("root");
+
     if (s.phase !== "ready") {
-      document.getElementById("gate").innerHTML = `
-        <div class="rules-box">
-          <div class="rules-title">尚未就绪（${esc(s.phase)}）</div>
-          <p style="margin:0 0 8px">请先完成 <a href="./ingest-setup.html">接入向导</a>：SSHD → 管理员一次性授权 → slimSync。</p>
-        </div>`;
+      root.innerHTML = `
+        <div class="dash">
+          <div class="dash-health warn">
+            <div class="dash-k">进料健康</div>
+            <div class="dash-v">未接入</div>
+          </div>
+          <div class="dash-metrics">
+            <div><span class="dash-k">今日进料</span><strong>—</strong></div>
+            <div><span class="dash-k">容量</span><strong>—</strong></div>
+            <div><span class="dash-k">待处理 / 失败</span><strong>— / —</strong></div>
+          </div>
+        </div>
+        <p style="margin-top:14px"><a class="btn btn-primary" href="./ingest-setup.html">去接入向导</a></p>`;
+      return;
     }
 
     const st = s.stats;
-    document.getElementById("stats").innerHTML = `
-      <div class="card"><div class="stat-label">今日上传</div><div class="stat" style="font-size:18px">${esc(st.todayUploaded)}</div></div>
-      <div class="card"><div class="stat-label">今日下载</div><div class="stat" style="font-size:18px">${esc(st.todayDownloaded)}</div></div>
-      <div class="card"><div class="stat-label">待处理</div><div class="stat" style="font-size:18px">${st.pending}</div></div>
-      <div class="card"><div class="stat-label">异常</div><div class="stat" style="font-size:18px">${st.errors}</div>
-        <p class="muted small" style="margin:6px 0 0">${esc(st.lastError || "")}</p></div>
-      <div class="card"><div class="stat-label">已用容量</div><div class="stat" style="font-size:18px">${esc(st.capacityUsed)}</div>
-        <p class="muted small" style="margin:6px 0 0">配额 ${esc(st.capacityQuota)}</p></div>
-      <div class="card"><div class="stat-label">引导 SSHD</div><div class="stat" style="font-size:16px">${
-        s.bootstrap.installed ? "已安装" : "未安装"
-      }</div></div>`;
+    const health =
+      st.errors > 0 ? "warn" : s.probe.slimSync === "在线" ? "ok" : "warn";
+    const healthText =
+      st.errors > 0 ? "有异常" : s.probe.slimSync === "在线" ? "正常" : "延迟";
 
-    document.getElementById("probe").innerHTML = `
-      <div class="card">
-        <div class="title">slimSync（Win）</div>
-        <p class="small" style="margin:8px 0">状态 <span class="pill ${
-          s.probe.slimSync === "在线" ? "ok" : "warn"
-        }">${esc(s.probe.slimSync)}</span>
-        ${s.probe.version ? ` · ${esc(s.probe.version)}` : ""}
-        ${s.probe.lastHeartbeat ? ` · 心跳 ${esc(s.probe.lastHeartbeat)}` : ""}</p>
-        <p class="muted small" style="margin:0">专户由系统管理，本页不展示口令。</p>
-      </div>`;
+    let dirs = s.dirs.map((d) => ({ ...d }));
+
+    function paintDashAndDirs() {
+      root.innerHTML = `
+        <div class="dash">
+          <div class="dash-health ${health}">
+            <div class="dash-k">进料健康</div>
+            <div class="dash-v">${healthText}</div>
+            <div class="muted small" style="margin-top:6px">探针 ${esc(
+              s.probe.slimSync
+            )} · ${esc(s.probe.version || "")} · 心跳 ${esc(
+              s.probe.lastHeartbeat || "—"
+            )}</div>
+          </div>
+          <div class="dash-metrics">
+            <div><span class="dash-k">今日进料</span><strong>${esc(
+              st.todayUploaded
+            )}</strong><span class="muted small"> 上传</span></div>
+            <div><span class="dash-k">容量</span><strong>${esc(
+              st.capacityUsed
+            )}</strong><span class="muted small"> / ${esc(
+              st.capacityQuota
+            )}</span></div>
+            <div><span class="dash-k">待处理 / 失败</span><strong>${
+              st.pending
+            } / ${st.errors}</strong></div>
+          </div>
+          ${
+            st.lastError
+              ? `<div class="dash-alert">最近问题：${esc(st.lastError)}</div>`
+              : ""
+          }
+        </div>
+
+        <div class="deal-section" id="dirs">
+          <div class="toolbar" style="margin-top:18px">
+            <h2 style="margin:0;flex:1">入库目录</h2>
+            <button type="button" class="btn btn-primary" id="save">保存</button>
+          </div>
+          <div id="list"></div>
+        </div>`;
+
+      const list = document.getElementById("list");
+      list.innerHTML = dirs
+        .map(
+          (d, i) => `<div class="card" style="margin-bottom:8px">
+            <label style="display:flex;gap:10px;align-items:flex-start">
+              <input type="checkbox" data-i="${i}" ${
+            d.enabled ? "checked" : ""
+          } style="margin-top:3px"/>
+              <span>
+                <div class="title">${esc(d.path)}</div>
+                <div class="meta">${esc(d.mode)} · ${d.files} 文件 · ${esc(
+            d.bytes
+          )}
+                  · <span class="pill ${
+                    d.status === "正常" ? "ok" : ""
+                  }">${esc(d.status)}</span></div>
+              </span>
+            </label>
+          </div>`
+        )
+        .join("");
+
+      list.querySelectorAll("input[type=checkbox]").forEach((el) => {
+        el.onchange = () => {
+          dirs[+el.dataset.i].enabled = el.checked;
+          dirs[+el.dataset.i].status = el.checked ? "正常" : "未启用";
+        };
+      });
+
+      document.getElementById("save").onclick = async () => {
+        const ok = await confirmDialog({
+          title: "保存入库目录",
+          body: "将按勾选目录开始/停止进料。",
+          confirmText: "保存",
+        });
+        if (!ok) return;
+        await ingestSaveDirs(dirs);
+        const flash = document.getElementById("flash");
+        flash.textContent = "已保存";
+        flash.classList.add("show");
+      };
+    }
+
+    paintDashAndDirs();
+    if (location.hash === "#dirs") {
+      document.getElementById("dirs")?.scrollIntoView({ behavior: "smooth" });
+    }
   </script>
 </body>
 </html>
