@@ -33,12 +33,7 @@
   ],
   "stats": {
     "todayUploaded": "128 MB",
-    "todayDownloaded": "36 MB",
-    "pending": 14,
-    "errors": 1,
-    "capacityUsed": "43.8 GB",
-    "capacityQuota": "200 GB",
-    "lastError": "笔记本侧曾权限拒绝 1 个文件（演示）"
+    "todayFiles": 86
   },
   "fleet": [
     {

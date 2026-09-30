@@ -339,13 +339,56 @@ export async function ingestMarkProbeReady() {
   return getIngestState();
 }
 
+/** 本机目录浏览（演示：模拟探针侧列目录） */
+export async function browseIngestFs(path) {
+  await delay(80);
+  const tree = await loadJson("../mock/ingest/fs-tree.json");
+  const raw = (path || "").trim();
+  if (!raw || raw === "\\") {
+    return {
+      path: "",
+      parent: null,
+      entries: tree.drives.map((d) => ({
+        name: d.name,
+        path: d.path,
+        kind: "drive",
+      })),
+    };
+  }
+  let cur = raw.replace(/\//g, "\\");
+  if (!cur.endsWith("\\")) cur += "\\";
+  const names = tree.dirs[cur];
+  if (!names) {
+    return { path: cur, parent: parentPath(cur), entries: [], error: "无法打开此目录" };
+  }
+  return {
+    path: cur,
+    parent: parentPath(cur),
+    entries: names.map((name) => ({
+      name,
+      path: cur + name + "\\",
+      kind: "dir",
+    })),
+  };
+}
+
+function parentPath(p) {
+  if (!p) return null;
+  const norm = p.endsWith("\\") ? p.slice(0, -1) : p;
+  const i = norm.lastIndexOf("\\");
+  if (i <= 0) return "";
+  if (i === 1 || /^[A-Za-z]:$/.test(norm.slice(0, i))) return norm.slice(0, 2) + "\\";
+  return norm.slice(0, i + 1);
+}
+
 export async function ingestAddDir(path) {
   await delay(180);
   const st = readState();
   const cur = await getIngestState();
   const dirs = [...(cur.dirs || [])];
-  const p = (path || "").trim();
-  if (!p) return { ok: false, error: "路径为空" };
+  let p = (path || "").trim().replace(/\//g, "\\");
+  if (!p) return { ok: false, error: "请先选择目录" };
+  if (p.endsWith("\\") && !/^[A-Za-z]:\\$/.test(p)) p = p.slice(0, -1);
   if (dirs.some((d) => d.path === p)) return { ok: false, error: "目录已在列表中" };
   dirs.push({
     id: "d" + Date.now(),

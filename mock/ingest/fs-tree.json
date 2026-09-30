@@ -1,0 +1,17 @@
+{
+  "drives": [
+    { "name": "C:", "path": "C:\\" },
+    { "name": "D:", "path": "D:\\" }
+  ],
+  "dirs": {
+    "C:\\": ["Program Files", "Users", "Windows"],
+    "C:\\Users\\": ["Public", "me"],
+    "C:\\Users\\me\\": ["Desktop", "Documents", "Downloads"],
+    "C:\\Users\\me\\Desktop\\": ["临时", "截图"],
+    "C:\\Users\\me\\Documents\\": ["合同", "汇报"],
+    "D:\\": ["项目资料", "工作文档", "备份"],
+    "D:\\项目资料\\": ["客户A", "客户B", "模板"],
+    "D:\\工作文档\\": ["制度", "培训"],
+    "D:\\备份\\": ["2025", "2026"]
+  }
+}

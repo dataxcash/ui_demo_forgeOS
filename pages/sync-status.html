@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>入库管理 · 文档入库</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav8" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav8" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav8" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav9" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav9" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav9" />
 </head>
 <body>
   <div id="page-root">
@@ -19,15 +19,16 @@
   </div>
   <div id="modal-root"></div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav8";
-    import { mountShell } from "../js/shell.js?v=nav8";
+    import { requireAccount } from "../js/session.js?v=nav9";
+    import { mountShell } from "../js/shell.js?v=nav9";
     import {
       getIngestState,
+      browseIngestFs,
       ingestAddDir,
       ingestRemoveDir,
-    } from "../js/api-mock.js?v=nav8";
-    import { confirmDialog } from "../js/confirm.js?v=nav8";
-    import { esc } from "../js/esc.js?v=nav8";
+    } from "../js/api-mock.js?v=nav9";
+    import { confirmDialog } from "../js/confirm.js?v=nav9";
+    import { esc } from "../js/esc.js?v=nav9";
 
     const account = await requireAccount();
     await mountShell({ account, active: "sync-status" });
@@ -43,35 +44,109 @@
       flash.classList.add("show");
     }
 
+    /** 本机目录浏览对话框：点进文件夹，选中后确认添加 */
     function openAddDialog() {
       const wrap = document.getElementById("modal-root");
+      let cwd = "";
+      let selected = null;
+      let listing = { path: "", parent: null, entries: [] };
+
       wrap.innerHTML = `
         <div class="modal-backdrop show" id="dlg">
-          <div class="modal" role="dialog" aria-label="添加目录">
-            <h3 style="margin:0 0 8px;font-size:15px">添加入库目录</h3>
-            <p class="muted small" style="margin:0 0 10px">确认后将通知同步组件加入监视列表。</p>
-            <label class="muted small">目录路径</label>
-            <input id="dir-path" style="width:100%;margin:4px 0 12px;padding:7px 8px;border:1px solid var(--line)" placeholder="例如 D:\\项目资料" />
+          <div class="modal modal-browse" role="dialog" aria-label="选择入库目录">
+            <h3 style="margin:0 0 6px;font-size:15px">选择入库目录</h3>
+            <p class="muted small" style="margin:0 0 10px">在本机上浏览并选择要监视的文件夹。</p>
+            <div class="fs-bar">
+              <button type="button" class="btn" id="fs-up" disabled>上级</button>
+              <div class="fs-path" id="fs-path">此电脑</div>
+            </div>
+            <div class="fs-list" id="fs-list" role="listbox"></div>
+            <div class="fs-selected muted small">已选：<strong id="fs-sel">未选择</strong></div>
             <div class="actions">
               <button type="button" class="btn" id="dlg-cancel">取消</button>
-              <button type="button" class="btn btn-primary" id="dlg-ok">确认添加</button>
+              <button type="button" class="btn btn-primary" id="dlg-ok" disabled>确认添加</button>
             </div>
           </div>
         </div>`;
+
       const close = () => {
         wrap.innerHTML = "";
       };
+      const okBtn = document.getElementById("dlg-ok");
+      const upBtn = document.getElementById("fs-up");
+      const pathEl = document.getElementById("fs-path");
+      const listEl = document.getElementById("fs-list");
+      const selEl = document.getElementById("fs-sel");
+
+      function setSelected(entry) {
+        selected = entry;
+        selEl.textContent = entry ? entry.path.replace(/\\$/, "") : "未选择";
+        okBtn.disabled = !entry || entry.kind === "drive";
+        listEl.querySelectorAll(".fs-item").forEach((el) => {
+          el.classList.toggle(
+            "selected",
+            entry && el.getAttribute("data-path") === entry.path
+          );
+        });
+      }
+
+      async function load(path) {
+        listing = await browseIngestFs(path);
+        cwd = listing.path || "";
+        pathEl.textContent = cwd || "此电脑";
+        upBtn.disabled = listing.parent === null;
+        if (listing.error) {
+          listEl.innerHTML = `<div class="empty">${esc(listing.error)}</div>`;
+          setSelected(null);
+          return;
+        }
+        if (!listing.entries.length) {
+          listEl.innerHTML = `<div class="empty">此文件夹为空</div>`;
+          setSelected(
+            cwd
+              ? { name: cwd, path: cwd, kind: "dir" }
+              : null
+          );
+          return;
+        }
+        listEl.innerHTML = listing.entries
+          .map(
+            (e) => `<button type="button" class="fs-item" role="option"
+              data-path="${esc(e.path)}" data-kind="${esc(e.kind)}" data-name="${esc(e.name)}">
+              <span class="fs-ico">${e.kind === "drive" ? "盘" : "夹"}</span>
+              <span class="fs-name">${esc(e.name)}</span>
+            </button>`
+          )
+          .join("");
+        setSelected(null);
+        listEl.querySelectorAll(".fs-item").forEach((btn) => {
+          const entry = {
+            name: btn.getAttribute("data-name"),
+            path: btn.getAttribute("data-path"),
+            kind: btn.getAttribute("data-kind"),
+          };
+          btn.onclick = () => {
+            if (entry.kind === "drive") {
+              load(entry.path);
+              return;
+            }
+            setSelected(entry);
+          };
+          btn.ondblclick = () => load(entry.path);
+        });
+      }
+
+      upBtn.onclick = () => load(listing.parent === null ? "" : listing.parent);
       document.getElementById("dlg-cancel").onclick = close;
       document.getElementById("dlg").onclick = (e) => {
         if (e.target.id === "dlg") close();
       };
-      document.getElementById("dlg-ok").onclick = async () => {
-        const path = document.getElementById("dir-path").value.trim();
-        if (!path) {
-          tip("请填写目录路径");
+      okBtn.onclick = async () => {
+        if (!selected || selected.kind === "drive") {
+          tip("请选择一个文件夹");
           return;
         }
-        const res = await ingestAddDir(path);
+        const res = await ingestAddDir(selected.path);
         if (!res.ok) {
           tip(res.error || "添加失败");
           return;
@@ -81,6 +156,8 @@
         s = await getIngestState();
         paint();
       };
+
+      load("");
     }
 
     function paint() {
@@ -88,30 +165,28 @@
         root.innerHTML = `
           <div class="dash">
             <div class="dash-health warn">
-              <div class="dash-k">进料健康</div>
+              <div class="dash-k">进料状态</div>
               <div class="dash-v">未接入</div>
             </div>
-            <div class="dash-metrics">
+            <div class="dash-metrics dash-metrics-2">
               <div><span class="dash-k">今日进料</span><strong>—</strong></div>
-              <div><span class="dash-k">容量</span><strong>—</strong></div>
-              <div><span class="dash-k">待处理 / 失败</span><strong>— / —</strong></div>
+              <div><span class="dash-k">监视目录</span><strong>—</strong></div>
             </div>
           </div>
           <p style="margin-top:14px"><a class="btn btn-primary" href="./ingest-setup.html">去接入向导</a></p>`;
         return;
       }
 
-      const st = s.stats;
-      const health =
-        st.errors > 0 ? "warn" : s.probe.slimSync === "在线" ? "ok" : "warn";
-      const healthText =
-        st.errors > 0 ? "有异常" : s.probe.slimSync === "在线" ? "正常" : "延迟";
+      const st = s.stats || {};
       const dirs = Array.isArray(s.dirs) ? s.dirs : [];
+      const online = s.probe.slimSync === "在线";
+      const health = online ? "ok" : "warn";
+      const healthText = online ? "正常" : "延迟";
 
       root.innerHTML = `
         <div class="dash">
           <div class="dash-health ${health}">
-            <div class="dash-k">进料健康</div>
+            <div class="dash-k">进料状态</div>
             <div class="dash-v">${healthText}</div>
             <div class="muted small" style="margin-top:6px">探针 ${esc(
               s.probe.slimSync
@@ -119,24 +194,16 @@
               s.probe.lastHeartbeat || "—"
             )}</div>
           </div>
-          <div class="dash-metrics">
+          <div class="dash-metrics dash-metrics-2">
             <div><span class="dash-k">今日进料</span><strong>${esc(
-              st.todayUploaded
-            )}</strong><span class="muted small"> 上传</span></div>
-            <div><span class="dash-k">容量</span><strong>${esc(
-              st.capacityUsed
-            )}</strong><span class="muted small"> / ${esc(
-              st.capacityQuota
-            )}</span></div>
-            <div><span class="dash-k">待处理 / 失败</span><strong>${
-              st.pending
-            } / ${st.errors}</strong></div>
+              st.todayUploaded || "—"
+            )}</strong>${
+              st.todayFiles != null
+                ? `<span class="muted small"> · ${st.todayFiles} 个文件</span>`
+                : ""
+            }</div>
+            <div><span class="dash-k">监视目录</span><strong>${dirs.length}</strong><span class="muted small"> 个</span></div>
           </div>
-          ${
-            st.lastError
-              ? `<div class="dash-alert">最近问题：${esc(st.lastError)}</div>`
-              : ""
-          }
         </div>
 
         <div class="deal-section" id="dirs">
