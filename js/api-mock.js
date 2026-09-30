@@ -339,12 +339,34 @@ export async function ingestMarkProbeReady() {
   return getIngestState();
 }
 
-export async function ingestSaveDirs(dirs) {
-  await delay(150);
+export async function ingestAddDir(path) {
+  await delay(180);
   const st = readState();
+  const cur = await getIngestState();
+  const dirs = [...(cur.dirs || [])];
+  const p = (path || "").trim();
+  if (!p) return { ok: false, error: "路径为空" };
+  if (dirs.some((d) => d.path === p)) return { ok: false, error: "目录已在列表中" };
+  dirs.push({
+    id: "d" + Date.now(),
+    path: p,
+    files: 0,
+    bytes: "—",
+    status: "监视中",
+  });
   st.ingest = { ...(st.ingest || {}), dirs };
   writeState(st);
-  return { ok: true };
+  return { ok: true, dirs };
+}
+
+export async function ingestRemoveDir(id) {
+  await delay(120);
+  const st = readState();
+  const cur = await getIngestState();
+  const dirs = (cur.dirs || []).filter((d) => d.id !== id);
+  st.ingest = { ...(st.ingest || {}), dirs };
+  writeState(st);
+  return { ok: true, dirs };
 }
 
 export async function getStatus(account) {

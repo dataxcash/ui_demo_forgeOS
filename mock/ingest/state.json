@@ -24,20 +24,11 @@
   },
   "dirs": [
     {
-      "path": "D:\\\\项目资料",
-      "enabled": true,
-      "mode": "双向",
+      "id": "d1",
+      "path": "D:\\项目资料",
       "files": 12840,
       "bytes": "42.6 GB",
-      "status": "正常"
-    },
-    {
-      "path": "D:\\\\邮件归档导出",
-      "enabled": false,
-      "mode": "仅上传",
-      "files": 0,
-      "bytes": "0",
-      "status": "未启用"
+      "status": "监视中"
     }
   ],
   "stats": {

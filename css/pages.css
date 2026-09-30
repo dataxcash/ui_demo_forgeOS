@@ -556,3 +556,14 @@
 .prog-item.done {
   color: var(--ok);
 }
+
+.dir-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dir-row .deal-main {
+  min-width: 0;
+  flex: 1;
+}
