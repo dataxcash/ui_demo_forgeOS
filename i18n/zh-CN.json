@@ -40,5 +40,9 @@
   "nav.ingestManage": "入库管理",
   "nav.ingestDirs": "入库管理",
   "nav.ingestFleet": "探针总览",
-  "nav.aiTools": "能力一览"
+  "nav.aiTools": "能力一览",
+  "nav.aiOcr": "OCR",
+  "nav.aiAsr": "ASR",
+  "nav.aiTts": "TTS",
+  "nav.aiContent": "内容分析"
 }

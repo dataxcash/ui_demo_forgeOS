@@ -252,6 +252,54 @@ export async function getAiTools() {
   return loadJson("../mock/aitools/catalog.json");
 }
 
+export async function getAiTool(id) {
+  const tools = await getAiTools();
+  return tools.find((t) => t.id === id) || null;
+}
+
+/** 调用基础 AI 能力：前台交材料+用户身份，后台跑模型，DEMO 回演示结果 */
+export async function runAiTool(account, toolId, payload) {
+  await delay(520);
+  const tool = await getAiTool(toolId);
+  if (!tool) return { ok: false, error: "未知能力" };
+  const text = (payload?.text || "").trim();
+  const files = Array.isArray(payload?.files) ? payload.files : [];
+  if (tool.input === "file" && !files.length) {
+    return { ok: false, error: "请先选择文件" };
+  }
+  if (tool.input === "text" && !text) {
+    return { ok: false, error: "请先填写内容" };
+  }
+  const st = readState();
+  const job = {
+    id: "ai-" + Date.now(),
+    at: new Date().toISOString().slice(0, 16).replace("T", " "),
+    toolId,
+    toolName: tool.name,
+    userId: account?.id || "",
+    userName: account?.name || "",
+    inputSummary:
+      tool.input === "file"
+        ? files.map((f) => f.name).join("；")
+        : text.slice(0, 80) + (text.length > 80 ? "…" : ""),
+    result: tool.sampleResult || "（无演示结果）",
+  };
+  const hist = [...(st.aiToolRuns || [])];
+  hist.unshift(job);
+  st.aiToolRuns = hist.slice(0, 30);
+  writeState(st);
+  return { ok: true, job };
+}
+
+export async function getAiToolRuns(toolId) {
+  await delay(40);
+  const st = readState();
+  const all = st.aiToolRuns || [];
+  return {
+    items: toolId ? all.filter((j) => j.toolId === toolId) : all,
+  };
+}
+
 /** 文档入库：基线 mock + session 向导进度 */
 export async function getIngestState() {
   await delay();

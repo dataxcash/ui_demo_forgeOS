@@ -68,6 +68,14 @@ function aiToolsApp() {
     appKey: "app.aitools",
     items: [
       { href: "./ai-tools.html", labelKey: "nav.aiTools", key: "ai-tools" },
+      { href: "./ai-tool.html?id=ocr", labelKey: "nav.aiOcr", key: "ai-ocr" },
+      { href: "./ai-tool.html?id=asr", labelKey: "nav.aiAsr", key: "ai-asr" },
+      { href: "./ai-tool.html?id=tts", labelKey: "nav.aiTts", key: "ai-tts" },
+      {
+        href: "./ai-tool.html?id=content",
+        labelKey: "nav.aiContent",
+        key: "ai-content",
+      },
     ],
   };
 }

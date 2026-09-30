@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>能力 · ai工具</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav11" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav11" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav11" />
+</head>
+<body>
+  <div id="page-root">
+    <div class="flash" id="flash"></div>
+    <div class="page-head">
+      <h1 id="title">—</h1>
+      <p id="sub"></p>
+    </div>
+    <div id="root"></div>
+  </div>
+  <script type="module">
+    import { requireAccount } from "../js/session.js?v=nav11";
+    import { mountShell } from "../js/shell.js?v=nav11";
+    import {
+      getAiTool,
+      runAiTool,
+      getAiToolRuns,
+    } from "../js/api-mock.js?v=nav11";
+    import { esc } from "../js/esc.js?v=nav11";
+
+    const id = new URLSearchParams(location.search).get("id") || "";
+    const activeMap = {
+      ocr: "ai-ocr",
+      asr: "ai-asr",
+      tts: "ai-tts",
+      content: "ai-content",
+    };
+    const account = await requireAccount();
+    const tool = await getAiTool(id);
+    if (!tool) {
+      location.replace("./ai-tools.html");
+      throw 0;
+    }
+    await mountShell({
+      account,
+      active: activeMap[tool.id] || "ai-tools",
+    });
+
+    document.title = `${tool.name} · ai工具`;
+    document.getElementById("title").textContent = tool.name;
+    document.getElementById("sub").textContent = tool.hint || tool.desc;
+
+    const root = document.getElementById("root");
+    /** @type {File[]} */
+    let files = [];
+
+    function tip(msg) {
+      const flash = document.getElementById("flash");
+      flash.textContent = msg;
+      flash.classList.add("show");
+    }
+
+    function fmtSize(n) {
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    async function paintHist() {
+      const { items } = await getAiToolRuns(tool.id);
+      const box = document.getElementById("hist");
+      if (!items.length) {
+        box.innerHTML = `<div class="empty">本会话还没有结果。</div>`;
+        return;
+      }
+      box.innerHTML = items
+        .map(
+          (j) => `<div class="card" style="margin-bottom:8px">
+            <div class="deal-title">${esc(j.at)} · ${esc(j.userName)}</div>
+            <div class="muted small" style="margin:4px 0">输入：${esc(
+              j.inputSummary
+            )}</div>
+            <pre class="tool-result">${esc(j.result)}</pre>
+          </div>`
+        )
+        .join("");
+    }
+
+    function paintForm() {
+      if (tool.input === "file") {
+        root.innerHTML = `
+          <div class="card upload-box">
+            <div class="upload-drop" id="drop">
+              <input type="file" id="file-input" accept="${esc(
+                tool.accept || "*/*"
+              )}" multiple hidden />
+              <p style="margin:0 0 10px">拖到这里，或</p>
+              <button type="button" class="btn btn-primary" id="btn-pick">选择文件</button>
+            </div>
+            <div id="picked" class="upload-picked muted small" hidden></div>
+            <div class="actions" style="margin-top:12px">
+              <button type="button" class="btn" id="btn-clear" disabled>清空</button>
+              <button type="button" class="btn btn-primary" id="btn-run" disabled>开始识别</button>
+            </div>
+            <p class="muted small" style="margin:10px 0 0">
+              当前用户：<strong>${esc(account.name)}</strong> · 交后台处理，结果回本页。
+            </p>
+          </div>
+          <div class="deal-section" style="margin-top:18px">
+            <h2 style="margin:0 0 8px">本会话结果</h2>
+            <div id="hist"></div>
+          </div>`;
+        const input = document.getElementById("file-input");
+        const drop = document.getElementById("drop");
+        const pickedEl = document.getElementById("picked");
+        const btnPick = document.getElementById("btn-pick");
+        const btnClear = document.getElementById("btn-clear");
+        const btnRun = document.getElementById("btn-run");
+        const runLabel =
+          tool.id === "asr" ? "开始转写" : tool.id === "ocr" ? "开始识别" : "提交";
+
+        btnRun.textContent = runLabel;
+
+        function paintPicked() {
+          const on = files.length > 0;
+          btnClear.disabled = !on;
+          btnRun.disabled = !on;
+          if (!on) {
+            pickedEl.hidden = true;
+            pickedEl.innerHTML = "";
+            return;
+          }
+          pickedEl.hidden = false;
+          pickedEl.innerHTML =
+            `已选 ${files.length} 个：` +
+            `<ul style="margin:4px 0 0;padding-left:18px">` +
+            files
+              .map(
+                (f) =>
+                  `<li>${esc(f.name)} <span class="muted">(${fmtSize(
+                    f.size
+                  )})</span></li>`
+              )
+              .join("") +
+            `</ul>`;
+        }
+
+        function addFiles(list) {
+          const next = [...files];
+          for (const f of list) {
+            if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
+            next.push(f);
+          }
+          files = next;
+          paintPicked();
+        }
+
+        btnPick.onclick = () => input.click();
+        input.onchange = () => {
+          addFiles([...input.files]);
+          input.value = "";
+        };
+        btnClear.onclick = () => {
+          files = [];
+          paintPicked();
+        };
+        btnRun.onclick = async () => {
+          btnRun.disabled = true;
+          const res = await runAiTool(account, tool.id, {
+            files: files.map((f) => ({
+              name: f.name,
+              size: f.size,
+              type: f.type,
+            })),
+          });
+          if (!res.ok) {
+            tip(res.error || "失败");
+            btnRun.disabled = false;
+            return;
+          }
+          tip("已出结果");
+          files = [];
+          paintPicked();
+          await paintHist();
+        };
+        drop.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          drop.classList.add("drag");
+        });
+        drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+        drop.addEventListener("drop", (e) => {
+          e.preventDefault();
+          drop.classList.remove("drag");
+          if (e.dataTransfer?.files?.length) addFiles([...e.dataTransfer.files]);
+        });
+      } else {
+        root.innerHTML = `
+          <div class="card upload-box">
+            <label class="muted small">输入文字</label>
+            <textarea id="txt" rows="6" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);font:inherit;resize:vertical" placeholder="${esc(
+              tool.placeholder || ""
+            )}"></textarea>
+            <div class="actions" style="margin-top:12px">
+              <button type="button" class="btn btn-primary" id="btn-run">${
+                tool.id === "tts" ? "合成语音" : "开始分析"
+              }</button>
+            </div>
+            <p class="muted small" style="margin:10px 0 0">
+              当前用户：<strong>${esc(account.name)}</strong> · 交后台处理，结果回本页。
+            </p>
+          </div>
+          <div class="deal-section" style="margin-top:18px">
+            <h2 style="margin:0 0 8px">本会话结果</h2>
+            <div id="hist"></div>
+          </div>`;
+        const btnRun = document.getElementById("btn-run");
+        btnRun.onclick = async () => {
+          const text = document.getElementById("txt").value;
+          btnRun.disabled = true;
+          const res = await runAiTool(account, tool.id, { text });
+          if (!res.ok) {
+            tip(res.error || "失败");
+            btnRun.disabled = false;
+            return;
+          }
+          tip("已出结果");
+          document.getElementById("txt").value = "";
+          btnRun.disabled = false;
+          await paintHist();
+        };
+      }
+      paintHist();
+    }
+
+    paintForm();
+  </script>
+</body>
+</html>
