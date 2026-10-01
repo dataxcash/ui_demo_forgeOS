@@ -279,12 +279,18 @@ export async function runAiTool(account, toolId, payload) {
   } else if (toolId === "content") {
     points = tool.samplePoints || [];
     risks = tool.sampleRisks || [];
+    const head = text.replace(/\s+/g, " ").slice(0, 36);
     resultText =
+      `依据你提交的片段（开头：「${head}${text.length > 36 ? "…" : ""}」）整理：\n` +
       "要点：\n" +
       points.map((p, i) => `${i + 1}. ${p}`).join("\n") +
       (risks.length
         ? "\n风险：\n" + risks.map((r) => `· ${r}`).join("\n")
         : "");
+  } else if (toolId === "ocr" || toolId === "asr") {
+    const names = files.map((f) => f.name).join("、");
+    resultText =
+      `【来自：${names || "未命名"}】\n` + (tool.sampleResult || "");
   }
 
   const st = readState();
@@ -540,10 +546,17 @@ export async function getIngestUploads() {
   return { items: st.ingestUploads || [] };
 }
 
-export async function getStatus(account) {
+export async function getStatus(account, opts = {}) {
   await delay(80);
+  const scoped = Object.prototype.hasOwnProperty.call(opts, "appId");
+  const appId = opts.appId || "";
+  const onApp = (id) => !scoped || appId === id;
   const items = [];
-  if (account.role === "manager" || account.role === "employee") {
+  /* 传了 appId 则只挂所属 App；未传（旧壳）保持原行为 */
+  if (
+    (account.role === "manager" || account.role === "employee") &&
+    onApp("aispace")
+  ) {
     const mine = await getMyDeals(account, { scope: "mine", openOnly: true });
     const urgent = mine.filter((d) => d.bucket === "须尽快");
     if (urgent.length) {
@@ -553,7 +566,7 @@ export async function getStatus(account) {
       });
     }
   }
-  if (account.role === "hr") {
+  if (account.role === "hr" && onApp("org")) {
     const batch = await getImportBatch();
     if (!batch.confirmed && batch.rows.length) {
       items.push({
@@ -567,7 +580,7 @@ export async function getStatus(account) {
       });
     }
   }
-  if (account.role === "it") {
+  if (account.role === "it" && onApp("platform")) {
     const jobs = await loadJson("../mock/it/jobs-a.json");
     const failed = jobs.filter((j) => j.status === "失败");
     if (failed.length) {
@@ -577,7 +590,7 @@ export async function getStatus(account) {
       });
     }
   }
-  if (account.role === "boss") {
+  if (account.role === "boss" && onApp("biz")) {
     const risks = await loadJson("../mock/boss/risks.json");
     const hot = risks.filter((r) => r.level === "高");
     if (hot.length) {

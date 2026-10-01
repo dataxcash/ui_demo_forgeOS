@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>入库管理 · 文档入库</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav9" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav9" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav9" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
 </head>
 <body>
   <div id="page-root">
@@ -19,16 +19,16 @@
   </div>
   <div id="modal-root"></div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav9";
-    import { mountShell } from "../js/shell.js?v=nav9";
+    import { requireAccount } from "../js/session.js?v=nav13";
+    import { mountShell } from "../js/shell.js?v=nav13";
     import {
       getIngestState,
       browseIngestFs,
       ingestAddDirs,
       ingestRemoveDir,
-    } from "../js/api-mock.js?v=nav9";
-    import { confirmDialog } from "../js/confirm.js?v=nav9";
-    import { esc } from "../js/esc.js?v=nav9";
+    } from "../js/api-mock.js?v=nav13";
+    import { confirmDialog } from "../js/confirm.js?v=nav13";
+    import { esc } from "../js/esc.js?v=nav13";
 
     const account = await requireAccount();
     await mountShell({ account, active: "sync-status" });

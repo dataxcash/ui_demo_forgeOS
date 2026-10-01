@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ai工具</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav12" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav12" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav12" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
 </head>
 <body>
   <div id="page-root">
@@ -22,14 +22,14 @@
     </details>
   </div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav12";
-    import { mountShell } from "../js/shell.js?v=nav12";
+    import { requireAccount } from "../js/session.js?v=nav13";
+    import { mountShell } from "../js/shell.js?v=nav13";
     import {
       getAiTool,
       runAiTool,
       getAiToolRuns,
-    } from "../js/api-mock.js?v=nav12";
-    import { esc } from "../js/esc.js?v=nav12";
+    } from "../js/api-mock.js?v=nav13";
+    import { esc } from "../js/esc.js?v=nav13";
 
     const id = new URLSearchParams(location.search).get("id") || "ocr";
     const activeMap = {
@@ -51,8 +51,7 @@
 
     document.title = `${tool.name} · ai工具`;
     document.getElementById("title").textContent = tool.name;
-    document.getElementById("sub").textContent =
-      `${tool.desc}${tool.tech ? `（${tool.tech}）` : ""}`;
+    document.getElementById("sub").textContent = tool.desc || "";
 
     const work = document.getElementById("work");
     /** @type {File[]} */
@@ -74,7 +73,7 @@
 
     function speak(text) {
       if (!text || !window.speechSynthesis) {
-        tip("本机暂不支持朗读演示");
+        tip("本机暂不能朗读，请换浏览器或装语音包后再试");
         return;
       }
       window.speechSynthesis.cancel();
@@ -89,10 +88,14 @@
 
     function renderResultHtml(job) {
       if (!job) {
-        return `<div class="tool-result-empty muted">结果会出现在这里。</div>`;
+        return `<div class="tool-result-empty muted">还没有结果</div>`;
       }
       if (job.toolId === "content" && (job.points || job.risks)) {
+        const head = (job.inputSummary || "").slice(0, 40);
         return `
+          <p class="muted small" style="margin:0 0 10px">依据你提交的片段${
+            head ? `（开头：「${esc(head)}${job.inputSummary.length > 40 ? "…" : ""}」）` : ""
+          }</p>
           <div class="tool-block">
             <div class="dash-k">要点</div>
             <ol class="tool-points">
@@ -113,7 +116,6 @@
       if (job.toolId === "tts") {
         return `
           <div class="tool-block">
-            <div class="dash-k">待朗读</div>
             <pre class="tool-result">${esc(job.speakText || job.result)}</pre>
             <div class="actions" style="margin-top:10px">
               <button type="button" class="btn btn-primary" id="btn-play">播放</button>
@@ -127,18 +129,23 @@
     function paintResultPane() {
       const pane = document.getElementById("result-pane");
       if (!pane) return;
-      const copyDisabled = !current || current.toolId === "tts";
+      const isTts = tool.id === "tts";
+      const headAction = isTts
+        ? `<button type="button" class="btn btn-primary" id="btn-head-play" ${
+            current ? "" : "disabled"
+          }>播放</button>`
+        : `<button type="button" class="btn" id="btn-copy" ${
+            current ? "" : "disabled"
+          }>复制</button>`;
       pane.innerHTML = `
         <div class="tool-pane-head">
-          <span class="dash-k">本次结果</span>
-          <button type="button" class="btn" id="btn-copy" ${
-            copyDisabled ? "disabled" : ""
-          }>复制</button>
+          <span class="dash-k">结果</span>
+          ${headAction}
         </div>
         <div class="tool-pane-body" id="result-body">
           ${renderResultHtml(current)}
         </div>`;
-      document.getElementById("btn-copy").onclick = async () => {
+      document.getElementById("btn-copy")?.addEventListener("click", async () => {
         if (!current?.result) return;
         try {
           await navigator.clipboard.writeText(current.result);
@@ -146,22 +153,25 @@
         } catch {
           tip("复制失败，请手动选中");
         }
-      };
-      document.getElementById("btn-play")?.addEventListener("click", () => {
-        speak(current?.speakText || current?.result || "");
       });
+      const play = () => speak(current?.speakText || current?.result || "");
+      document.getElementById("btn-head-play")?.addEventListener("click", play);
+      document.getElementById("btn-play")?.addEventListener("click", play);
       document.getElementById("btn-stop")?.addEventListener("click", stopSpeak);
     }
 
     async function paintHist() {
       const { items } = await getAiToolRuns(tool.id);
+      const wrap = document.getElementById("hist-wrap");
       const box = document.getElementById("hist");
       if (!items.length) {
-        box.innerHTML = `<div class="empty">还没有记录。</div>`;
+        wrap.hidden = true;
+        box.innerHTML = "";
         return;
       }
+      wrap.hidden = false;
       box.innerHTML = items
-        .slice(0, 8)
+        .slice(0, 6)
         .map(
           (j) => `<button type="button" class="tool-hist-item" data-id="${esc(
             j.id
@@ -189,7 +199,6 @@
         return;
       }
       current = res.job;
-      tip("已出结果");
       paintResultPane();
       await paintHist();
       if (tool.id === "tts") speak(current.speakText);
@@ -203,7 +212,7 @@
               <input type="file" id="file-input" accept="${esc(
                 tool.accept || "*/*"
               )}" multiple hidden />
-              <p style="margin:0 0 10px">拖到这里，或</p>
+              <p style="margin:0 0 10px">${esc(tool.dropHint || "拖到这里，或")}</p>
               <button type="button" class="btn btn-primary" id="btn-pick">选择文件</button>
             </div>
             <div id="picked" class="upload-picked muted small" hidden></div>
@@ -225,16 +234,8 @@
 
       work.innerHTML = `
         <section class="tool-pane">
-          <div class="tool-pane-head"><span class="dash-k">交材料</span></div>
-          <div class="tool-pane-body">
-            <p class="muted small" style="margin:0 0 10px">${esc(
-              tool.hint || ""
-            )}</p>
-            ${inputInner}
-            <p class="muted small" style="margin:12px 0 0">以 ${esc(
-              account.name
-            )} 身份提交</p>
-          </div>
+          <div class="tool-pane-head"><span class="dash-k">放进来</span></div>
+          <div class="tool-pane-body">${inputInner}</div>
         </section>
         <section class="tool-pane" id="result-pane"></section>`;
 

@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>批炼任务</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav4" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav4" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav4" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
 </head>
 <body>
   <div id="page-root">
@@ -21,10 +21,10 @@
     </table>
   </div>
   <script type="module">
-    import { requireAccount, guardPage } from "../js/session.js?v=nav4";
-    import { mountShell } from "../js/shell.js?v=nav4";
-    import { getIt } from "../js/api-mock.js?v=nav4";
-    import { esc } from "../js/esc.js?v=nav4";
+    import { requireAccount, guardPage } from "../js/session.js?v=nav13";
+    import { mountShell } from "../js/shell.js?v=nav13";
+    import { getIt } from "../js/api-mock.js?v=nav13";
+    import { esc } from "../js/esc.js?v=nav13";
 
     const account = await requireAccount();
     if (!guardPage(account, ["it"])) throw 0;

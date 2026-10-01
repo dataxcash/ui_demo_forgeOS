@@ -1,14 +1,14 @@
-import { esc } from "./esc.js?v=nav8";
-import { loadI18n, t } from "./i18n.js?v=nav8";
+import { esc } from "./esc.js?v=nav13";
+import { loadI18n, t } from "./i18n.js?v=nav13";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav8";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav8";
-import { confirmDialog } from "./confirm.js?v=nav8";
+} from "./session.js?v=nav13";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav13";
+import { confirmDialog } from "./confirm.js?v=nav13";
 
 export async function mountShell({ account, active }) {
   await loadI18n("zh-CN");
@@ -35,7 +35,7 @@ export async function mountShell({ account, active }) {
       <div class="account-menu" id="account-menu"></div>
       <div class="status-rail" id="status-rail"></div>
       <div class="body-row" id="body-row">
-        <nav class="sidenav" id="sidenav" aria-label="本模块菜单"></nav>
+        <nav class="sidenav" id="sidenav" aria-label="二级菜单"></nav>
         <main class="main" id="main-slot"></main>
         <aside class="copilot" id="copilot" aria-label="智能助理">
           <div class="copilot-head">
@@ -76,9 +76,10 @@ export async function mountShell({ account, active }) {
   /* 侧栏：只渲染当前 App 的二级，竖排；绝不混入其它 App */
   const nav = document.getElementById("sidenav");
   const items = sideItems || [];
-  nav.innerHTML =
-    `<div class="subnav-label">本模块</div>` +
-    items
+  if (!items.length) {
+    nav.innerHTML = `<div class="muted small" style="padding:14px">暂无子页</div>`;
+  } else {
+    nav.innerHTML = items
       .map(
         (n) =>
           `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${esc(
@@ -86,17 +87,18 @@ export async function mountShell({ account, active }) {
           )}</a>`
       )
       .join("");
-  if (!items.length) {
-    nav.innerHTML = `<div class="subnav-label">本模块</div><div class="muted small" style="padding:10px 14px">暂无子页</div>`;
   }
 
-  const status = await getStatus(account);
+  const status = await getStatus(account, { appId: currentApp?.id || "" });
   const rail = document.getElementById("status-rail");
   if (status.length) {
     rail.classList.add("show");
     rail.innerHTML =
       `<span class="muted">${esc(t("status.prefix"))}：</span>` +
       status.map((s) => `<a href="${s.href}">${esc(s.text)}</a>`).join("；");
+  } else {
+    rail.classList.remove("show");
+    rail.innerHTML = "";
   }
 
   const menu = document.getElementById("account-menu");
