@@ -682,14 +682,113 @@ a.tool-card {
 a.tool-card:hover {
   border-color: var(--accent);
 }
+
+/* ai工具：输入 | 结果 */
+.tool-work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .tool-work {
+    grid-template-columns: 1fr;
+  }
+}
+.tool-pane {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+.tool-pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.tool-pane-body {
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
+}
+.tool-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--line);
+  font: inherit;
+  resize: vertical;
+  min-height: 180px;
+  background: var(--surface-2);
+}
 .tool-result {
-  margin: 8px 0 0;
+  margin: 0;
   padding: 10px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
+  max-height: 420px;
+  overflow: auto;
+}
+.tool-result-empty {
+  padding: 24px 8px;
+  text-align: center;
+}
+.tool-block {
+  margin-bottom: 12px;
+}
+.tool-block:last-child {
+  margin-bottom: 0;
+}
+.tool-points {
+  margin: 6px 0 0;
+  padding-left: 1.25em;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.tool-risk {
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.tool-risk .tool-points {
+  color: var(--warn);
+}
+.tool-hist {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0 12px 10px;
+}
+.tool-hist > summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.tool-hist-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tool-hist-item:hover {
+  color: var(--accent);
 }

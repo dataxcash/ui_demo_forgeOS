@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>能力 · ai工具</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav11" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav11" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav11" />
+  <title>ai工具</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav12" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav12" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav12" />
 </head>
 <body>
   <div id="page-root">
@@ -15,19 +15,23 @@
       <h1 id="title">—</h1>
       <p id="sub"></p>
     </div>
-    <div id="root"></div>
+    <div class="tool-work" id="work"></div>
+    <details class="tool-hist" id="hist-wrap">
+      <summary>最近几次</summary>
+      <div id="hist"></div>
+    </details>
   </div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav11";
-    import { mountShell } from "../js/shell.js?v=nav11";
+    import { requireAccount } from "../js/session.js?v=nav12";
+    import { mountShell } from "../js/shell.js?v=nav12";
     import {
       getAiTool,
       runAiTool,
       getAiToolRuns,
-    } from "../js/api-mock.js?v=nav11";
-    import { esc } from "../js/esc.js?v=nav11";
+    } from "../js/api-mock.js?v=nav12";
+    import { esc } from "../js/esc.js?v=nav12";
 
-    const id = new URLSearchParams(location.search).get("id") || "";
+    const id = new URLSearchParams(location.search).get("id") || "ocr";
     const activeMap = {
       ocr: "ai-ocr",
       asr: "ai-asr",
@@ -37,21 +41,24 @@
     const account = await requireAccount();
     const tool = await getAiTool(id);
     if (!tool) {
-      location.replace("./ai-tools.html");
+      location.replace("./ai-tool.html?id=ocr");
       throw 0;
     }
     await mountShell({
       account,
-      active: activeMap[tool.id] || "ai-tools",
+      active: activeMap[tool.id] || "ai-ocr",
     });
 
     document.title = `${tool.name} · ai工具`;
     document.getElementById("title").textContent = tool.name;
-    document.getElementById("sub").textContent = tool.hint || tool.desc;
+    document.getElementById("sub").textContent =
+      `${tool.desc}${tool.tech ? `（${tool.tech}）` : ""}`;
 
-    const root = document.getElementById("root");
+    const work = document.getElementById("work");
     /** @type {File[]} */
     let files = [];
+    /** @type {object|null} */
+    let current = null;
 
     function tip(msg) {
       const flash = document.getElementById("flash");
@@ -65,30 +72,133 @@
       return (n / (1024 * 1024)).toFixed(1) + " MB";
     }
 
+    function speak(text) {
+      if (!text || !window.speechSynthesis) {
+        tip("本机暂不支持朗读演示");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "zh-CN";
+      window.speechSynthesis.speak(u);
+    }
+
+    function stopSpeak() {
+      window.speechSynthesis?.cancel();
+    }
+
+    function renderResultHtml(job) {
+      if (!job) {
+        return `<div class="tool-result-empty muted">结果会出现在这里。</div>`;
+      }
+      if (job.toolId === "content" && (job.points || job.risks)) {
+        return `
+          <div class="tool-block">
+            <div class="dash-k">要点</div>
+            <ol class="tool-points">
+              ${(job.points || []).map((p) => `<li>${esc(p)}</li>`).join("")}
+            </ol>
+          </div>
+          ${
+            job.risks?.length
+              ? `<div class="tool-block tool-risk">
+                  <div class="dash-k">风险提示</div>
+                  <ul class="tool-points">
+                    ${job.risks.map((r) => `<li>${esc(r)}</li>`).join("")}
+                  </ul>
+                </div>`
+              : ""
+          }`;
+      }
+      if (job.toolId === "tts") {
+        return `
+          <div class="tool-block">
+            <div class="dash-k">待朗读</div>
+            <pre class="tool-result">${esc(job.speakText || job.result)}</pre>
+            <div class="actions" style="margin-top:10px">
+              <button type="button" class="btn btn-primary" id="btn-play">播放</button>
+              <button type="button" class="btn" id="btn-stop">停止</button>
+            </div>
+          </div>`;
+      }
+      return `<pre class="tool-result">${esc(job.result)}</pre>`;
+    }
+
+    function paintResultPane() {
+      const pane = document.getElementById("result-pane");
+      if (!pane) return;
+      const copyDisabled = !current || current.toolId === "tts";
+      pane.innerHTML = `
+        <div class="tool-pane-head">
+          <span class="dash-k">本次结果</span>
+          <button type="button" class="btn" id="btn-copy" ${
+            copyDisabled ? "disabled" : ""
+          }>复制</button>
+        </div>
+        <div class="tool-pane-body" id="result-body">
+          ${renderResultHtml(current)}
+        </div>`;
+      document.getElementById("btn-copy").onclick = async () => {
+        if (!current?.result) return;
+        try {
+          await navigator.clipboard.writeText(current.result);
+          tip("已复制");
+        } catch {
+          tip("复制失败，请手动选中");
+        }
+      };
+      document.getElementById("btn-play")?.addEventListener("click", () => {
+        speak(current?.speakText || current?.result || "");
+      });
+      document.getElementById("btn-stop")?.addEventListener("click", stopSpeak);
+    }
+
     async function paintHist() {
       const { items } = await getAiToolRuns(tool.id);
       const box = document.getElementById("hist");
       if (!items.length) {
-        box.innerHTML = `<div class="empty">本会话还没有结果。</div>`;
+        box.innerHTML = `<div class="empty">还没有记录。</div>`;
         return;
       }
       box.innerHTML = items
+        .slice(0, 8)
         .map(
-          (j) => `<div class="card" style="margin-bottom:8px">
-            <div class="deal-title">${esc(j.at)} · ${esc(j.userName)}</div>
-            <div class="muted small" style="margin:4px 0">输入：${esc(
-              j.inputSummary
-            )}</div>
-            <pre class="tool-result">${esc(j.result)}</pre>
-          </div>`
+          (j) => `<button type="button" class="tool-hist-item" data-id="${esc(
+            j.id
+          )}">
+            <strong>${esc(j.at)}</strong>
+            <span class="muted small">${esc(j.inputSummary)}</span>
+          </button>`
         )
         .join("");
+      box.querySelectorAll("[data-id]").forEach((btn) => {
+        btn.onclick = () => {
+          current = items.find((x) => x.id === btn.getAttribute("data-id"));
+          paintResultPane();
+        };
+      });
     }
 
-    function paintForm() {
-      if (tool.input === "file") {
-        root.innerHTML = `
-          <div class="card upload-box">
+    async function doRun(payload) {
+      const btn = document.getElementById("btn-run");
+      if (btn) btn.disabled = true;
+      const res = await runAiTool(account, tool.id, payload);
+      if (btn) btn.disabled = false;
+      if (!res.ok) {
+        tip(res.error || "失败");
+        return;
+      }
+      current = res.job;
+      tip("已出结果");
+      paintResultPane();
+      await paintHist();
+      if (tool.id === "tts") speak(current.speakText);
+    }
+
+    function paintWork() {
+      const inputInner =
+        tool.input === "file"
+          ? `
             <div class="upload-drop" id="drop">
               <input type="file" id="file-input" accept="${esc(
                 tool.accept || "*/*"
@@ -99,26 +209,44 @@
             <div id="picked" class="upload-picked muted small" hidden></div>
             <div class="actions" style="margin-top:12px">
               <button type="button" class="btn" id="btn-clear" disabled>清空</button>
-              <button type="button" class="btn btn-primary" id="btn-run" disabled>开始识别</button>
-            </div>
-            <p class="muted small" style="margin:10px 0 0">
-              当前用户：<strong>${esc(account.name)}</strong> · 交后台处理，结果回本页。
-            </p>
+              <button type="button" class="btn btn-primary" id="btn-run" disabled>${esc(
+                tool.action || "开始"
+              )}</button>
+            </div>`
+          : `
+            <textarea id="txt" rows="10" class="tool-textarea" placeholder="${esc(
+              tool.placeholder || ""
+            )}"></textarea>
+            <div class="actions" style="margin-top:12px">
+              <button type="button" class="btn btn-primary" id="btn-run">${esc(
+                tool.action || "开始"
+              )}</button>
+            </div>`;
+
+      work.innerHTML = `
+        <section class="tool-pane">
+          <div class="tool-pane-head"><span class="dash-k">交材料</span></div>
+          <div class="tool-pane-body">
+            <p class="muted small" style="margin:0 0 10px">${esc(
+              tool.hint || ""
+            )}</p>
+            ${inputInner}
+            <p class="muted small" style="margin:12px 0 0">以 ${esc(
+              account.name
+            )} 身份提交</p>
           </div>
-          <div class="deal-section" style="margin-top:18px">
-            <h2 style="margin:0 0 8px">本会话结果</h2>
-            <div id="hist"></div>
-          </div>`;
+        </section>
+        <section class="tool-pane" id="result-pane"></section>`;
+
+      paintResultPane();
+
+      if (tool.input === "file") {
         const input = document.getElementById("file-input");
         const drop = document.getElementById("drop");
         const pickedEl = document.getElementById("picked");
         const btnPick = document.getElementById("btn-pick");
         const btnClear = document.getElementById("btn-clear");
         const btnRun = document.getElementById("btn-run");
-        const runLabel =
-          tool.id === "asr" ? "开始转写" : tool.id === "ocr" ? "开始识别" : "提交";
-
-        btnRun.textContent = runLabel;
 
         function paintPicked() {
           const on = files.length > 0;
@@ -131,7 +259,7 @@
           }
           pickedEl.hidden = false;
           pickedEl.innerHTML =
-            `已选 ${files.length} 个：` +
+            `已选 ${files.length} 个` +
             `<ul style="margin:4px 0 0;padding-left:18px">` +
             files
               .map(
@@ -163,25 +291,17 @@
           files = [];
           paintPicked();
         };
-        btnRun.onclick = async () => {
-          btnRun.disabled = true;
-          const res = await runAiTool(account, tool.id, {
+        btnRun.onclick = () =>
+          doRun({
             files: files.map((f) => ({
               name: f.name,
               size: f.size,
               type: f.type,
             })),
+          }).then(() => {
+            files = [];
+            paintPicked();
           });
-          if (!res.ok) {
-            tip(res.error || "失败");
-            btnRun.disabled = false;
-            return;
-          }
-          tip("已出结果");
-          files = [];
-          paintPicked();
-          await paintHist();
-        };
         drop.addEventListener("dragover", (e) => {
           e.preventDefault();
           drop.classList.add("drag");
@@ -193,45 +313,16 @@
           if (e.dataTransfer?.files?.length) addFiles([...e.dataTransfer.files]);
         });
       } else {
-        root.innerHTML = `
-          <div class="card upload-box">
-            <label class="muted small">输入文字</label>
-            <textarea id="txt" rows="6" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);font:inherit;resize:vertical" placeholder="${esc(
-              tool.placeholder || ""
-            )}"></textarea>
-            <div class="actions" style="margin-top:12px">
-              <button type="button" class="btn btn-primary" id="btn-run">${
-                tool.id === "tts" ? "合成语音" : "开始分析"
-              }</button>
-            </div>
-            <p class="muted small" style="margin:10px 0 0">
-              当前用户：<strong>${esc(account.name)}</strong> · 交后台处理，结果回本页。
-            </p>
-          </div>
-          <div class="deal-section" style="margin-top:18px">
-            <h2 style="margin:0 0 8px">本会话结果</h2>
-            <div id="hist"></div>
-          </div>`;
-        const btnRun = document.getElementById("btn-run");
-        btnRun.onclick = async () => {
+        document.getElementById("btn-run").onclick = async () => {
           const text = document.getElementById("txt").value;
-          btnRun.disabled = true;
-          const res = await runAiTool(account, tool.id, { text });
-          if (!res.ok) {
-            tip(res.error || "失败");
-            btnRun.disabled = false;
-            return;
-          }
-          tip("已出结果");
+          await doRun({ text });
           document.getElementById("txt").value = "";
-          btnRun.disabled = false;
-          await paintHist();
         };
       }
-      paintHist();
     }
 
-    paintForm();
+    paintWork();
+    await paintHist();
   </script>
 </body>
 </html>

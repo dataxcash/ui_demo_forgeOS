@@ -2,39 +2,11 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ai工具 · ForgeOS</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav11" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav11" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav11" />
+  <meta http-equiv="refresh" content="0;url=./ai-tool.html?id=ocr" />
+  <title>转向识文字</title>
+  <script>location.replace("./ai-tool.html?id=ocr");</script>
 </head>
 <body>
-  <div id="page-root">
-    <div class="page-head">
-      <h1>ai工具</h1>
-      <p>系统基础能力：选一项用起来。与跟单、文档入库分开；具体跑在后台模型上。</p>
-    </div>
-    <div id="list" class="grid-2"></div>
-  </div>
-  <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav11";
-    import { mountShell } from "../js/shell.js?v=nav11";
-    import { getAiTools } from "../js/api-mock.js?v=nav11";
-    import { esc } from "../js/esc.js?v=nav11";
-
-    const account = await requireAccount();
-    await mountShell({ account, active: "ai-tools" });
-
-    const tools = await getAiTools();
-    document.getElementById("list").innerHTML = tools
-      .map(
-        (t) => `<a class="card tool-card" href="./ai-tool.html?id=${esc(t.id)}">
-          <div class="title">${esc(t.name)}</div>
-          <p class="small" style="margin:8px 0">${esc(t.desc)}</p>
-          <span class="pill ok">${esc(t.status)}</span>
-        </a>`
-      )
-      .join("");
-  </script>
+  <p><a href="./ai-tool.html?id=ocr">识文字</a></p>
 </body>
 </html>
