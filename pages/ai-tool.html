@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ai工具</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav14" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav14" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav14" />
 </head>
 <body>
   <div id="page-root">
@@ -16,42 +16,39 @@
       <p id="sub"></p>
     </div>
     <div class="tool-work" id="work"></div>
-    <details class="tool-hist" id="hist-wrap">
+    <details class="tool-hist" id="hist-wrap" hidden>
       <summary>最近几次</summary>
       <div id="hist"></div>
     </details>
   </div>
   <script type="module">
-    import { requireAccount } from "../js/session.js?v=nav13";
-    import { mountShell } from "../js/shell.js?v=nav13";
+    import { requireAccount } from "../js/session.js?v=nav14";
+    import { mountShell } from "../js/shell.js?v=nav14";
     import {
       getAiTool,
+      getAiTools,
       runAiTool,
       getAiToolRuns,
-    } from "../js/api-mock.js?v=nav13";
-    import { esc } from "../js/esc.js?v=nav13";
+    } from "../js/api-mock.js?v=nav14";
+    import { esc } from "../js/esc.js?v=nav14";
 
-    const id = new URLSearchParams(location.search).get("id") || "ocr";
-    const activeMap = {
+    const ACTIVE = {
       ocr: "ai-ocr",
       asr: "ai-asr",
       tts: "ai-tts",
       content: "ai-content",
     };
+
     const account = await requireAccount();
-    const tool = await getAiTool(id);
-    if (!tool) {
-      location.replace("./ai-tool.html?id=ocr");
-      throw 0;
-    }
+    const catalog = await getAiTools();
+    let toolId = new URLSearchParams(location.search).get("id") || "ocr";
+    if (!catalog.some((t) => t.id === toolId)) toolId = "ocr";
+    let tool = catalog.find((t) => t.id === toolId);
+
     await mountShell({
       account,
-      active: activeMap[tool.id] || "ai-ocr",
+      active: ACTIVE[tool.id] || "ai-ocr",
     });
-
-    document.title = `${tool.name} · ai工具`;
-    document.getElementById("title").textContent = tool.name;
-    document.getElementById("sub").textContent = tool.desc || "";
 
     const work = document.getElementById("work");
     /** @type {File[]} */
@@ -86,6 +83,28 @@
       window.speechSynthesis?.cancel();
     }
 
+    function markSideActive() {
+      const key = ACTIVE[tool.id];
+      document.querySelectorAll("#sidenav a").forEach((a) => {
+        const href = a.getAttribute("href") || "";
+        const id = new URL(href, location.href).searchParams.get("id");
+        a.classList.toggle("active", id === tool.id || a.dataset.key === key);
+      });
+    }
+
+    function wireSideNavNoReload() {
+      document.querySelectorAll("#sidenav a").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          const href = a.getAttribute("href") || "";
+          if (!href.includes("ai-tool.html")) return;
+          e.preventDefault();
+          const id = new URL(href, location.href).searchParams.get("id") || "ocr";
+          if (id === tool.id) return;
+          switchTool(id, true);
+        });
+      });
+    }
+
     function renderResultHtml(job) {
       if (!job) {
         return `<div class="tool-result-empty muted">还没有结果</div>`;
@@ -94,7 +113,11 @@
         const head = (job.inputSummary || "").slice(0, 40);
         return `
           <p class="muted small" style="margin:0 0 10px">依据你提交的片段${
-            head ? `（开头：「${esc(head)}${job.inputSummary.length > 40 ? "…" : ""}」）` : ""
+            head
+              ? `（开头：「${esc(head)}${
+                  job.inputSummary.length > 40 ? "…" : ""
+                }」）`
+              : ""
           }</p>
           <div class="tool-block">
             <div class="dash-k">要点</div>
@@ -166,6 +189,7 @@
       const box = document.getElementById("hist");
       if (!items.length) {
         wrap.hidden = true;
+        wrap.open = false;
         box.innerHTML = "";
         return;
       }
@@ -205,6 +229,13 @@
     }
 
     function paintWork() {
+      files = [];
+      current = null;
+      stopSpeak();
+      document.title = `${tool.name} · ai工具`;
+      document.getElementById("title").textContent = tool.name;
+      document.getElementById("sub").textContent = tool.desc || "";
+
       const inputInner =
         tool.input === "file"
           ? `
@@ -322,6 +353,26 @@
       }
     }
 
+    async function switchTool(id, pushUrl) {
+      const next = catalog.find((t) => t.id === id) || (await getAiTool(id));
+      if (!next) return;
+      tool = next;
+      toolId = next.id;
+      if (pushUrl) {
+        history.pushState({ tool: toolId }, "", `./ai-tool.html?id=${toolId}`);
+      }
+      markSideActive();
+      paintWork();
+      await paintHist();
+    }
+
+    wireSideNavNoReload();
+    window.addEventListener("popstate", () => {
+      const id = new URLSearchParams(location.search).get("id") || "ocr";
+      switchTool(id, false);
+    });
+
+    markSideActive();
     paintWork();
     await paintHist();
   </script>

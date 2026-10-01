@@ -161,6 +161,11 @@
 .status-rail.show {
   display: block;
 }
+/* ai工具 / 文档入库：强制不出现跟单待办条 */
+body.status-muted .status-rail,
+body.status-muted .status-rail.show {
+  display: none !important;
+}
 .status-rail a {
   font-weight: 600;
 }
