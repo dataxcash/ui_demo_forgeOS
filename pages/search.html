@@ -4,54 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>搜</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav18" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav18" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav18" />
 </head>
 <body>
-  <div id="page-root">
-    <div class="page-head">
-      <h1>搜</h1>
-      <p>按关键词<strong>找文件/记录</strong>（命中列表）。要「为什么/卡在哪」请用「问」。</p>
-    </div>
-    <div class="ask-box">
-      <input id="q" placeholder="搜：报价、合同、投诉…" value="报价" />
-      <button class="btn btn-primary" id="btn" type="button">搜</button>
-    </div>
-    <ul class="list" id="hits"></ul>
-  </div>
+  <div id="page-root"></div>
+  <div id="modal-root"></div>
   <script type="module">
-    import { requireAccount, guardPage } from "../js/session.js?v=nav13";
-    import { mountShell } from "../js/shell.js?v=nav13";
-    import { getSearchHits } from "../js/api-mock.js?v=nav13";
-    import { esc } from "../js/esc.js?v=nav13";
-
-    const account = await requireAccount();
-    if (!guardPage(account, ["employee", "manager"])) throw 0;
-    await mountShell({ account, active: "search" });
-
-    async function run() {
-      const q = document.getElementById("q").value.trim();
-      const hits = await getSearchHits(q);
-      document.getElementById("hits").innerHTML = hits
-        .map(
-          (h) => `<li>
-            <div class="title">${esc(h.title)} <span class="pill">${esc(h.kind)}</span></div>
-            <div class="meta">${esc(h.snippet)}</div>
-            ${
-              h.themeId
-                ? `<div class="meta"><a href="./graph-theme.html?id=${esc(h.themeId)}">关联主题</a></div>`
-                : ""
-            }
-          </li>`
-        )
-        .join("") || `<li class="empty">无命中</li>`;
-    }
-    document.getElementById("btn").onclick = run;
-    document.getElementById("q").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") run();
-    });
-    run();
+    import { startPage } from "../js/soft-nav.js?v=nav18";
+    import * as page from "../js/pages/search.js?v=nav18";
+    await startPage(page);
   </script>
 </body>
 </html>

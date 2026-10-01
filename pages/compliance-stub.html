@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>合规 · ForgeOS WebUI</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <title>合规占位</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav18" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav18" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav18" />
 </head>
 <body>
-  <div class="login-page">
-    <div class="login-card">
-      <div class="logo">合规工作区</div>
-      <p class="sub">本账户能力尚未开通。请切换至已授权账户。</p>
-      <a class="btn btn-primary" href="./login.html">返回登录</a>
-    </div>
-  </div>
+  <div id="page-root"></div>
+  <div id="modal-root"></div>
+  <script type="module">
+    import { startPage } from "../js/soft-nav.js?v=nav18";
+    import * as page from "../js/pages/stub.js?v=nav18";
+    await startPage(page);
+  </script>
 </body>
 </html>

@@ -3,46 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>批炼任务</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <title>批炼任务 A</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav18" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav18" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav18" />
 </head>
 <body>
-  <div id="page-root">
-    <div class="flash" id="flash"></div>
-    <div class="page-head">
-      <h1>批炼任务 A</h1>
-      <p>闲时谱系批炼。失败可点开日志摘要。</p>
-    </div>
-    <table class="table">
-      <thead><tr><th>任务</th><th>状态</th><th>开始</th><th>日志</th></tr></thead>
-      <tbody id="tb"></tbody>
-    </table>
-  </div>
+  <div id="page-root"></div>
+  <div id="modal-root"></div>
   <script type="module">
-    import { requireAccount, guardPage } from "../js/session.js?v=nav13";
-    import { mountShell } from "../js/shell.js?v=nav13";
-    import { getIt } from "../js/api-mock.js?v=nav13";
-    import { esc } from "../js/esc.js?v=nav13";
-
-    const account = await requireAccount();
-    if (!guardPage(account, ["it"])) throw 0;
-    await mountShell({ account, active: "it-job" });
-
-    const data = await getIt();
-    document.getElementById("tb").innerHTML = data.jobs
-      .map((j) => {
-        const cls =
-          j.status === "失败" ? "danger" : j.status === "成功" ? "ok" : "warn";
-        return `<tr>
-          <td><strong>${esc(j.name)}</strong><div class="muted small">${esc(j.id)}</div></td>
-          <td><span class="pill ${cls}">${esc(j.status)}</span></td>
-          <td class="small">${esc(j.started)}</td>
-          <td class="small">${esc(j.log)}</td>
-        </tr>`;
-      })
-      .join("");
+    import { startPage } from "../js/soft-nav.js?v=nav18";
+    import * as page from "../js/pages/it-job.js?v=nav18";
+    await startPage(page);
   </script>
 </body>
 </html>

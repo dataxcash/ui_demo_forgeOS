@@ -2,11 +2,19 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=./ai-tool.html?id=ocr" />
-  <title>转向识文字</title>
-  <script>location.replace("./ai-tool.html?id=ocr");</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ai工具</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav18" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav18" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav18" />
 </head>
 <body>
-  <p><a href="./ai-tool.html?id=ocr">识文字</a></p>
+  <div id="page-root"></div>
+  <div id="modal-root"></div>
+  <script type="module">
+    import { startPage } from "../js/soft-nav.js?v=nav18";
+    import * as page from "../js/pages/ai-tool.js?v=nav18";
+    await startPage(page);
+  </script>
 </body>
 </html>

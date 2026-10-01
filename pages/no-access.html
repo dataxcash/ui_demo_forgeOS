@@ -3,25 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>无权访问 · ForgeOS WebUI</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <title>无权限</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav18" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav18" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav18" />
 </head>
 <body>
-  <div class="login-page">
-    <div class="login-card">
-      <div class="logo">无权访问</div>
-      <p class="sub">当前账户无此路由。请返回本 ROLE 工作区，或切换账户。</p>
-      <button class="btn btn-primary" type="button" id="go">返回工作区</button>
-    </div>
-  </div>
+  <div id="page-root"></div>
+  <div id="modal-root"></div>
   <script type="module">
-    import { requireAccount, homeFor } from "../js/session.js?v=nav4";
-    const a = await requireAccount();
-    document.getElementById("go").onclick = () => {
-      location.href = a ? homeFor(a) : "./login.html";
-    };
+    import { startPage } from "../js/soft-nav.js?v=nav18";
+    import * as page from "../js/pages/stub.js?v=nav18";
+    await startPage(page);
   </script>
 </body>
 </html>

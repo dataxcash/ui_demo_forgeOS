@@ -1,20 +1,105 @@
-import { esc } from "./esc.js?v=nav16";
-import { loadI18n, t } from "./i18n.js?v=nav16";
+import { esc } from "./esc.js?v=nav18";
+import { loadI18n, t } from "./i18n.js?v=nav18";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav16";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav16";
-import { confirmDialog } from "./confirm.js?v=nav16";
+} from "./session.js?v=nav18";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav18";
+import { confirmDialog } from "./confirm.js?v=nav18";
 
-/** 这些 App 不挂全局事态条（跟单待办等） */
 const STATUS_MUTE_APPS = new Set(["aitools", "ingest"]);
 
-export async function mountShell({ account, active }) {
+let shellAccount = null;
+let shellActive = null;
+let shellWired = false;
+
+export function getShellAccount() {
+  return shellAccount;
+}
+
+/** 幂等：只建一次壳；之后只刷导航/事态 */
+export async function ensureShell(account, active) {
+  shellAccount = account;
+  shellActive = active;
   await loadI18n("zh-CN");
+  if (!document.querySelector(".app-shell")) {
+    await buildShellDom(account, active);
+  } else {
+    await refreshShellChrome(account, active);
+  }
+}
+
+/** @deprecated 兼容旧页；请用 ensureShell + startPage */
+export async function mountShell({ account, active }) {
+  await ensureShell(account, active);
+  const { installSoftNav } = await import("./soft-nav.js?v=nav18");
+  installSoftNav();
+}
+
+export async function refreshShellChrome(account, active) {
+  shellAccount = account;
+  shellActive = active;
+  await loadI18n("zh-CN");
+  const { groups, currentApp, sideItems } = resolveNav(account, active);
+  document.body.dataset.app = currentApp?.id || "";
+  document.body.classList.toggle(
+    "status-muted",
+    STATUS_MUTE_APPS.has(currentApp?.id)
+  );
+
+  const who = document.getElementById("who-name");
+  if (who) who.textContent = `${account.name} · ${account.title}`;
+
+  const mainMenu = document.getElementById("main-menu");
+  if (mainMenu) {
+    mainMenu.innerHTML = groups
+      .map((g) => {
+        const home = g.items[0]?.href || "#";
+        const on = currentApp && g.id === currentApp.id;
+        return `<a href="${home}" class="main-menu-item${on ? " active" : ""}">${esc(
+          t(g.appKey)
+        )}</a>`;
+      })
+      .join("");
+  }
+
+  const nav = document.getElementById("sidenav");
+  if (nav) {
+    const items = sideItems || [];
+    if (!items.length) {
+      nav.innerHTML = `<div class="muted small" style="padding:14px">暂无子页</div>`;
+    } else {
+      nav.innerHTML = items
+        .map(
+          (n) =>
+            `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${esc(
+              t(n.labelKey)
+            )}</a>`
+        )
+        .join("");
+    }
+  }
+
+  const rail = document.getElementById("status-rail");
+  if (rail) {
+    rail.classList.remove("show");
+    rail.innerHTML = "";
+    if (!STATUS_MUTE_APPS.has(currentApp?.id)) {
+      const status = await getStatus(account, { appId: currentApp?.id || "" });
+      if (status.length) {
+        rail.classList.add("show");
+        rail.innerHTML =
+          `<span class="muted">${esc(t("status.prefix"))}：</span>` +
+          status.map((s) => `<a href="${s.href}">${esc(s.text)}</a>`).join("；");
+      }
+    }
+  }
+}
+
+async function buildShellDom(account, active) {
   const { groups, currentApp, sideItems } = resolveNav(account, active);
   document.body.dataset.app = currentApp?.id || "";
   document.body.classList.toggle(
@@ -67,106 +152,75 @@ export async function mountShell({ account, active }) {
     main.remove();
   }
 
-  document.getElementById("who-name").textContent =
-    `${account.name} · ${account.title}`;
+  await refreshShellChrome(account, active);
 
-  /* TOP：主菜单 = 仅系统级 App（aiSpace / 文档入库 / ai工具 …） */
-  document.getElementById("main-menu").innerHTML = groups
-    .map((g) => {
-      const home = g.items[0]?.href || "#";
-      const on = currentApp && g.id === currentApp.id;
-      return `<a href="${home}" class="main-menu-item${on ? " active" : ""}">${esc(
-        t(g.appKey)
-      )}</a>`;
-    })
-    .join("");
-
-  /* 侧栏：只渲染当前 App 的二级，竖排；绝不混入其它 App */
-  const nav = document.getElementById("sidenav");
-  const items = sideItems || [];
-  if (!items.length) {
-    nav.innerHTML = `<div class="muted small" style="padding:14px">暂无子页</div>`;
-  } else {
-    nav.innerHTML = items
-      .map(
-        (n) =>
-          `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${esc(
-            t(n.labelKey)
-          )}</a>`
-      )
-      .join("");
+  if (!shellWired) {
+    shellWired = true;
+    wireShellChrome(account, active);
   }
+}
 
-  const rail = document.getElementById("status-rail");
-  rail.classList.remove("show");
-  rail.innerHTML = "";
-  if (!STATUS_MUTE_APPS.has(currentApp?.id)) {
-    const status = await getStatus(account, { appId: currentApp?.id || "" });
-    if (status.length) {
-      rail.classList.add("show");
-      rail.innerHTML =
-        `<span class="muted">${esc(t("status.prefix"))}：</span>` +
-        status.map((s) => `<a href="${s.href}">${esc(s.text)}</a>`).join("；");
-    }
-  }
-
+function wireShellChrome(account, active) {
   const menu = document.getElementById("account-menu");
-  const accounts = await loadAccounts();
-  menu.innerHTML =
-    accounts
-      .map((a) => {
-        const stub = a.stub ? " stub" : "";
-        const extra = a.stub ? ` · ${t("account.stub")}` : "";
-        return `<button type="button" class="${stub}" data-id="${esc(a.id)}">
+  loadAccounts().then((accounts) => {
+    menu.innerHTML =
+      accounts
+        .map((a) => {
+          const stub = a.stub ? " stub" : "";
+          const extra = a.stub ? ` · ${t("account.stub")}` : "";
+          return `<button type="button" class="${stub}" data-id="${esc(a.id)}">
           <strong>${esc(a.name)}</strong><br/><span class="muted small">${esc(
-          a.title
-        )}${esc(extra)}</span>
+            a.title
+          )}${esc(extra)}</span>
         </button>`;
-      })
-      .join("") +
-    `<div class="hint">${esc(t("account.hint"))}</div>
+        })
+        .join("") +
+      `<div class="hint">${esc(t("account.hint"))}</div>
      <button type="button" data-id="__logout">${esc(t("nav.logout"))}</button>`;
 
-  document.getElementById("btn-switch").onclick = () => {
-    menu.classList.toggle("show");
-  };
-  document.addEventListener("click", (e) => {
-    if (
-      !menu.contains(e.target) &&
-      e.target !== document.getElementById("btn-switch")
-    ) {
+    document.getElementById("btn-switch").onclick = () => {
+      menu.classList.toggle("show");
+    };
+    document.addEventListener("click", (e) => {
+      if (
+        !menu.contains(e.target) &&
+        e.target !== document.getElementById("btn-switch")
+      ) {
+        menu.classList.remove("show");
+      }
+    });
+    menu.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-id]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      if (id === "__logout") {
+        clearAccount();
+        location.href = "./login.html";
+        return;
+      }
+      const acc = accounts.find((a) => a.id === id);
+      if (!acc || acc.stub) return;
+      setAccountId(id);
       menu.classList.remove("show");
-    }
-  });
-  menu.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-id]");
-    if (!btn) return;
-    const id = btn.getAttribute("data-id");
-    if (id === "__logout") {
-      clearAccount();
-      location.href = "./login.html";
-      return;
-    }
-    const acc = accounts.find((a) => a.id === id);
-    if (!acc || acc.stub) return;
-    setAccountId(id);
-    location.href = homeFor(acc);
+      const { softNavigate } = await import("./soft-nav.js?v=nav18");
+      shellAccount = acc;
+      await softNavigate(new URL(homeFor(acc), location.href), { push: true });
+    });
   });
 
   const row = document.getElementById("body-row");
   const openCopilot = () => row.classList.add("copilot-open");
-  const closeCopilot = () => row.classList.remove("copilot-open");
   document.getElementById("btn-copilot").onclick = () => {
     row.classList.toggle("copilot-open");
   };
-  document.getElementById("btn-copilot-close").onclick = closeCopilot;
+  document.getElementById("btn-copilot-close").onclick = () =>
+    row.classList.remove("copilot-open");
 
   const msgs = document.getElementById("copilot-msgs");
   function appendMsg(role, text, actions = []) {
     const div = document.createElement("div");
     div.className = `msg ${role}`;
-    const meta =
-      role === "user" ? account.name : t("copilot.title");
+    const meta = role === "user" ? shellAccount?.name || "" : t("copilot.title");
     let actHtml = "";
     if (actions.length) {
       actHtml =
@@ -190,7 +244,6 @@ export async function mountShell({ account, active }) {
     )}</div>${actHtml}`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
-
     div.querySelectorAll("button[data-act]").forEach((btn) => {
       btn.onclick = async () => {
         const kind = btn.getAttribute("data-kind");
@@ -204,12 +257,10 @@ export async function mountShell({ account, active }) {
           if (typeof window.__hrPrefillNormal === "function") {
             window.__hrPrefillNormal();
           } else {
-            location.href = "./hr-import.html";
-          }
-          const flash = document.getElementById("flash");
-          if (flash) {
-            flash.textContent = "已按建议预填（须再点确认开通）";
-            flash.classList.add("show");
+            const { softNavigate } = await import("./soft-nav.js?v=nav18");
+            await softNavigate(new URL("./hr-import.html", location.href), {
+              push: true,
+            });
           }
         }
       };
@@ -225,7 +276,11 @@ export async function mountShell({ account, active }) {
     ta.value = "";
     appendMsg("user", q);
     openCopilot();
-    const res = await askCopilot({ account, question: q, pageKey: active });
+    const res = await askCopilot({
+      account: shellAccount,
+      question: q,
+      pageKey: shellActive,
+    });
     appendMsg("assistant", res.text, res.actions || []);
   }
 
