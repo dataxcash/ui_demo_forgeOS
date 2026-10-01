@@ -45,16 +45,28 @@ export function homeFor(account) {
   return map[account.role] || "./login.html";
 }
 
-/** 全员：文档入库 */
+/** 全员：文档入库（单页 + view= 页内切换，避免整页刷新） */
 function ingestApp(account) {
   const items = [
-    { href: "./ingest-upload.html", labelKey: "nav.ingestUpload", key: "ingest-upload" },
-    { href: "./ingest-setup.html", labelKey: "nav.ingestSetup", key: "ingest-setup" },
-    { href: "./sync-status.html", labelKey: "nav.ingestManage", key: "sync-status" },
+    {
+      href: "./ingest.html?view=upload",
+      labelKey: "nav.ingestUpload",
+      key: "ingest-upload",
+    },
+    {
+      href: "./ingest.html?view=setup",
+      labelKey: "nav.ingestSetup",
+      key: "ingest-setup",
+    },
+    {
+      href: "./ingest.html?view=manage",
+      labelKey: "nav.ingestManage",
+      key: "sync-status",
+    },
   ];
   if (account.role === "it") {
     items.push({
-      href: "./ingest-fleet.html",
+      href: "./ingest.html?view=fleet",
       labelKey: "nav.ingestFleet",
       key: "ingest-fleet",
     });

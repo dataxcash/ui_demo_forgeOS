@@ -2,53 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>探针总览 · 文档入库</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <meta http-equiv="refresh" content="0;url=./ingest.html?view=fleet" />
+  <title>转向机器总览</title>
+  <script>location.replace("./ingest.html?view=fleet");</script>
 </head>
-<body>
-  <div id="page-root">
-    <div class="page-head">
-      <h1>探针总览</h1>
-      <p>IT：全员机器上引导 SSHD 与 slimSync 状态。不展示专户口令明文。</p>
-    </div>
-    <table class="table" id="tbl">
-      <thead>
-        <tr>
-          <th>用户</th><th>机器</th><th>SSHD</th><th>slimSync</th><th>版本</th><th>最近见到</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <script type="module">
-    import { requireAccount, guardPage } from "../js/session.js?v=nav13";
-    import { mountShell } from "../js/shell.js?v=nav13";
-    import { getIngestState } from "../js/api-mock.js?v=nav13";
-    import { esc } from "../js/esc.js?v=nav13";
-
-    const account = await requireAccount();
-    if (!guardPage(account, ["it"])) throw 0;
-    await mountShell({ account, active: "ingest-fleet" });
-
-    const s = await getIngestState();
-    document.querySelector("#tbl tbody").innerHTML = s.fleet
-      .map((r) => {
-        const ssh = r.sshd === "在线" ? "ok" : r.sshd === "离线" ? "danger" : "warn";
-        const sync =
-          r.slimSync === "在线" ? "ok" : r.slimSync === "延迟" ? "warn" : "danger";
-        return `<tr>
-          <td>${esc(r.user)}</td>
-          <td>${esc(r.host)}</td>
-          <td><span class="pill ${ssh}">${esc(r.sshd)}</span></td>
-          <td><span class="pill ${sync}">${esc(r.slimSync)}</span></td>
-          <td>${esc(r.version)}</td>
-          <td>${esc(r.lastSeen)}</td>
-        </tr>`;
-      })
-      .join("");
-  </script>
-</body>
+<body><p><a href="./ingest.html?view=fleet">机器总览</a></p></body>
 </html>
