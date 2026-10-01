@@ -1,0 +1,110 @@
+{
+  "HO-zhao": {
+    "person": "赵强",
+    "account": "zhao.qiang",
+    "title": "交付工程师",
+    "dept": "交付",
+    "risk": "高",
+    "summary": "他还管着现场和客户对口；走之前必须指定谁接手，不然客户找不到人。",
+    "permissions": [
+      { "name": "交付部门资料", "level": "可改", "action": "离职后收回" },
+      { "name": "现场客户材料夹", "level": "可改", "action": "离职后收回" },
+      { "name": "能不能登录本系统", "level": "可以", "action": "离职后关掉" }
+    ],
+    "themes": [
+      {
+        "id": "T-045",
+        "name": "现场延迟投诉",
+        "customer": "华东制氧厂",
+        "project": "MES 现场交付 / 到货与投产",
+        "status": "客户在催",
+        "note": "还没指定接手人"
+      },
+      {
+        "id": "T-041",
+        "name": "MES 升级实施协作",
+        "customer": "华东制氧厂",
+        "project": "华东制氧厂 · MES 升级",
+        "status": "协作中",
+        "note": "可交给孙悦"
+      },
+      {
+        "id": "T-056",
+        "name": "续维谈判",
+        "customer": "三厂（老客户）",
+        "project": "老客户续维 · 三厂",
+        "status": "续签谈判",
+        "note": "要指定商务接手"
+      }
+    ],
+    "materials": [
+      { "file": "现场排期_赵强.xlsx", "seg": "本周任务", "summary": "华东制氧厂现场还有 3 项没做完" },
+      { "file": "客户对接纪要_0912.md", "seg": "接口人", "summary": "客户那边联系人只有他知道" }
+    ],
+    "openItems": [
+      "指定「华东制氧厂 · 现场延迟投诉」谁接手",
+      "把客户联系方式交出来写清楚",
+      "确认没有把敏感附件拷走"
+    ]
+  },
+  "HO-gu": {
+    "person": "顾军",
+    "account": "gu.jun",
+    "title": "销售",
+    "dept": "销售一部",
+    "risk": "中",
+    "summary": "离职前要把客户关系交回，权限关掉。",
+    "permissions": [
+      { "name": "销售一部资料", "level": "可改", "action": "离职后收回" },
+      { "name": "客户报价夹", "level": "只能看", "action": "先留着只读 90 天" },
+      { "name": "能不能登录本系统", "level": "可以", "action": "离职后关掉" }
+    ],
+    "themes": [
+      {
+        "id": "T-gu-sales",
+        "name": "名下客户跟进",
+        "customer": "销售一部客户池",
+        "project": "顾军名下线索与在谈",
+        "status": "待交回",
+        "note": "交回给李娜"
+      }
+    ],
+    "materials": [
+      { "file": "客户报价夹索引.md", "seg": "在谈客户", "summary": "报价与跟进记录需交回销售一部" }
+    ],
+    "openItems": [
+      "客户关系交回给李娜",
+      "确认报价夹无个人拷贝",
+      "关登录"
+    ]
+  },
+  "HO-xuqing": {
+    "person": "许晴",
+    "account": "xu.qing",
+    "title": "销售→售前",
+    "dept": "售前",
+    "risk": "低",
+    "summary": "从销售转到售前：原先销售的材料要交清，售前的材料按需要开通。",
+    "permissions": [
+      { "name": "销售一部资料", "level": "可改", "action": "先改成只能看，30 天后收回" },
+      { "name": "售前资料", "level": "没有", "action": "开通只能看" }
+    ],
+    "themes": [
+      {
+        "id": "T-043",
+        "name": "报价跟进",
+        "customer": "华东制氧厂",
+        "project": "MES-2026-Q3 报价",
+        "status": "协作中",
+        "note": "可保留只能看"
+      }
+    ],
+    "materials": [
+      { "file": "个人客户笔记_许晴.md", "seg": "跟进", "summary": "挪到售前共享前先脱敏" }
+    ],
+    "openItems": [
+      "确认销售一部的材料要不要迁出",
+      "让售前负责人钱进知道这件事"
+    ]
+  }
+}

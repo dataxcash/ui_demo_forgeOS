@@ -101,6 +101,113 @@ export async function confirmImport(selectedIds) {
   return st.importResult;
 }
 
+/** 花名册对比后的待办（确认生效 / 删除存档；有待办则禁止上传新表） */
+export async function getOrgDiffTasks() {
+  await delay();
+  const base = await loadJson("../mock/hr/org-diff-tasks.json");
+  const st = readState();
+  const done = new Set(st.orgTaskDone || []);
+  const archived = new Set(st.orgTaskArchived || []);
+  const tasks = base.tasks.map((t) => {
+    if (done.has(t.id)) return { ...t, status: "done" };
+    if (archived.has(t.id)) return { ...t, status: "archived" };
+    return { ...t, status: "pending" };
+  });
+  const pending = tasks.filter((t) => t.status === "pending");
+  const summary = {
+    join: pending.filter((t) => t.kind === "入").length,
+    move: pending.filter((t) => t.kind === "转").length,
+    leave: pending.filter((t) => t.kind === "离").length,
+    adjust: pending.filter((t) => t.kind === "调").length,
+  };
+  return {
+    ...base,
+    tasks,
+    summary,
+    pendingCount: pending.length,
+    canUpload: pending.length === 0,
+    uploaded: !!st.orgCsvUploaded,
+    lastUploadName: st.orgCsvName || base.sourceFile,
+    archiveLog: st.orgArchiveLog || [],
+  };
+}
+
+export async function uploadOrgCsv(fileName) {
+  await delay(280);
+  const pack = await getOrgDiffTasks();
+  if (pack.pendingCount > 0) {
+    return {
+      ok: false,
+      pendingCount: pack.pendingCount,
+      message: `还有 ${pack.pendingCount} 条待办没处理完，不能传新花名册。请先确认或删除并存档。`,
+    };
+  }
+  const st = readState();
+  st.orgCsvUploaded = true;
+  st.orgCsvName = fileName || "org-upload.csv";
+  st.orgCsvAt = Date.now();
+  /* 新一轮对比：清空本轮确认/存档标记，按样例重新列出待办 */
+  st.orgTaskDone = [];
+  st.orgTaskArchived = [];
+  writeState(st);
+  const next = await getOrgDiffTasks();
+  return { ok: true, ...next };
+}
+
+export async function getHandover(id) {
+  await delay(80);
+  if (!id) return null;
+  const all = await loadJson("../mock/hr/handovers.json");
+  return all[id] || null;
+}
+
+export async function confirmOrgTasks(ids) {
+  await delay(220);
+  const st = readState();
+  const archived = new Set(st.orgTaskArchived || []);
+  const clean = ids.filter((id) => !archived.has(id));
+  st.orgTaskDone = [...new Set([...(st.orgTaskDone || []), ...clean])];
+  st.orgConfirmAt = Date.now();
+  writeState(st);
+  return { ok: true, count: clean.length };
+}
+
+/** 删除待办并存档（不当成确认生效，但算已处理） */
+export async function archiveOrgTasks(ids) {
+  await delay(180);
+  const base = await loadJson("../mock/hr/org-diff-tasks.json");
+  const st = readState();
+  const archived = new Set(st.orgTaskArchived || []);
+  const done = new Set(st.orgTaskDone || []);
+  const log = [...(st.orgArchiveLog || [])];
+  let n = 0;
+  for (const id of ids) {
+    if (archived.has(id) || done.has(id)) continue;
+    const t = base.tasks.find((x) => x.id === id);
+    if (!t) continue;
+    archived.add(id);
+    log.push({
+      id: t.id,
+      person: t.person,
+      kind: t.kind,
+      dept: t.dept,
+      diff: t.diff,
+      at: Date.now(),
+      sourceFile: st.orgCsvName || base.sourceFile,
+    });
+    n += 1;
+  }
+  st.orgTaskArchived = [...archived];
+  st.orgArchiveLog = log;
+  writeState(st);
+  return { ok: true, count: n };
+}
+
+export async function getOrgCurrent() {
+  await delay(80);
+  return loadJson("../mock/hr/org-current.json");
+}
+
 export async function getDeals() {
   await delay();
   return loadJson("../mock/deals/deals.json");
@@ -566,17 +673,12 @@ export async function getStatus(account, opts = {}) {
       });
     }
   }
-  if (account.role === "hr" && onApp("org")) {
-    const batch = await getImportBatch();
-    if (!batch.confirmed && batch.rows.length) {
+  if (account.role === "hr" && onApp("aispace")) {
+    const pack = await getOrgDiffTasks();
+    if (pack.pendingCount) {
       items.push({
-        text: `待确认导入 ${batch.rows.length} 人`,
-        href: "./hr-import.html",
-      });
-    } else if (batch.confirmed) {
-      items.push({
-        text: `已开通 ${batch.confirmed.opened} 人（本会话）`,
-        href: "./hr-import.html",
+        text: `还有 ${pack.pendingCount} 条`,
+        href: "./hr-org.html?view=tasks",
       });
     }
   }
@@ -685,26 +787,20 @@ export async function askCopilot({ account, question, pageKey }) {
     return { text: "请输入具体问题。", actions: [] };
   }
 
-  if (role === "hr" || /导入|开通|确认板|入职/.test(q)) {
-    const batch = await getImportBatch();
-    if (batch.confirmed) {
-      return {
-        text: cite([
-          `本会话已确认开通 ${batch.confirmed.opened} 人。`,
-          "未确认的导入批次不会进入可用账户。若需新批次，请重新导入（本预发环境可清会话后重试）。",
-        ]),
-        actions: [{ id: "go-import", label: "打开导入确认", href: "./hr-import.html" }],
-      };
-    }
+  if (role === "hr" || /花名册|变动|离职|交接|材料|导入|开通|组织/.test(q)) {
+    const pack = await getOrgDiffTasks();
     return {
       text: cite([
-        `当前待确认导入 ${batch.rows.length} 人（批次 ${batch.batchId}，源 ${batch.source}）。`,
-        "色标含：正常 / 疑似重复 / 缺上级 / 冲突部门。",
-        "我可以建议勾选「正常」行，但开通必须由你在确认板点击总确认。",
+        `还有 ${pack.pendingCount} 条对比出来的变动等人确认。`,
+        "离职的人点进去能看他还剩哪些客户、项目和文件。",
       ]),
       actions: [
-        { id: "prefill-normal", label: "建议勾选正常行", kind: "hr-prefill" },
-        { id: "go-import", label: "打开导入确认", href: "./hr-import.html" },
+        { id: "go-org", label: "看待办事项", href: "./hr-org.html?view=tasks" },
+        {
+          id: "go-hand",
+          label: "赵强还没交清什么",
+          href: "./hr-org.html?view=task&id=OT-05",
+        },
       ],
     };
   }

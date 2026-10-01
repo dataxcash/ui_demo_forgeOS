@@ -37,7 +37,7 @@ export function homeFor(account) {
   const map = {
     employee: "./aispace.html?view=mine",
     manager: "./aispace.html?view=mine",
-    hr: "./hr-home.html",
+    hr: "./hr-org.html?view=current",
     boss: "./boss-home.html",
     it: "./it-home.html",
     compliance: "./compliance-stub.html",
@@ -112,12 +112,26 @@ export function navGroupsFor(account) {
     }
     groups.push({ id: "aispace", appKey: "app.aispace", items });
   } else if (account.role === "hr") {
+    /* 花名册对比 → 待办确认；离职点开看交接。不挂「我的单」。 */
     groups.push({
-      id: "org",
-      appKey: "app.org",
+      id: "aispace",
+      appKey: "app.aispace",
       items: [
-        { href: "./hr-home.html", labelKey: "nav.hrHome", key: "hr-home" },
-        { href: "./hr-import.html", labelKey: "nav.hrImport", key: "hr-import" },
+        {
+          href: "./hr-org.html?view=current",
+          labelKey: "nav.hrCurrent",
+          key: "hr-current",
+        },
+        {
+          href: "./hr-org.html?view=tasks",
+          labelKey: "nav.hrTasks",
+          key: "hr-tasks",
+        },
+        {
+          href: "./hr-org.html?view=upload",
+          labelKey: "nav.hrUpload",
+          key: "hr-upload",
+        },
       ],
     });
   } else if (account.role === "boss") {

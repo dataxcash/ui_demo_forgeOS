@@ -1,0 +1,88 @@
+{
+  "batchId": "ORG-20261001",
+  "sourceFile": "org-2026-10-01.csv",
+  "comparedAt": "2026-10-01 09:12",
+  "summary": { "join": 2, "move": 1, "leave": 2, "adjust": 1 },
+  "tasks": [
+    {
+      "id": "OT-01",
+      "kind": "入",
+      "person": "周小白",
+      "account": "zhou.xb",
+      "dept": "销售一部",
+      "manager": "李娜",
+      "diff": "花名册里有，系统里还没有（新人）",
+      "effects": ["开通登录账号", "能看「销售一部」的资料"],
+      "status": "pending",
+      "handoverId": null,
+      "evidenceDealId": null
+    },
+    {
+      "id": "OT-02",
+      "kind": "入",
+      "person": "沈芳",
+      "account": "shen.fang",
+      "dept": "人事",
+      "manager": "陈思",
+      "diff": "花名册里有，系统里还没有（新人）",
+      "effects": ["开通登录账号", "能看「人事」的资料"],
+      "status": "pending",
+      "handoverId": null,
+      "evidenceDealId": null
+    },
+    {
+      "id": "OT-03",
+      "kind": "转",
+      "person": "许晴",
+      "account": "xu.qing",
+      "dept": "售前",
+      "manager": "钱进",
+      "fromDept": "销售一部",
+      "fromManager": "李娜",
+      "diff": "部门从销售一部→售前 · 上级从李娜→钱进",
+      "effects": ["改能看的资料范围", "销售一部默认权限收回", "售前资料开通只能看"],
+      "status": "pending",
+      "handoverId": "HO-xuqing",
+      "evidenceDealId": null
+    },
+    {
+      "id": "OT-04",
+      "kind": "调",
+      "person": "冯磊",
+      "account": "feng.lei",
+      "dept": "信息技术",
+      "manager": "吴工",
+      "diff": "岗位从运维→开发（上级没变）",
+      "effects": ["按开发岗位调整可用能力（演示）"],
+      "status": "pending",
+      "handoverId": null,
+      "evidenceDealId": null
+    },
+    {
+      "id": "OT-05",
+      "kind": "离",
+      "person": "赵强",
+      "account": "zhao.qiang",
+      "dept": "交付",
+      "manager": "—",
+      "diff": "系统里有，新花名册里没有（离职）",
+      "effects": ["关掉登录", "收回资料权限", "手上客户和项目要交接"],
+      "status": "pending",
+      "handoverId": "HO-zhao",
+      "evidenceDealId": null
+    },
+    {
+      "id": "OT-06",
+      "kind": "离",
+      "person": "顾军",
+      "account": "gu.jun",
+      "dept": "销售一部",
+      "manager": "—",
+      "diff": "系统里有，新花名册里没有（离职）",
+      "effects": ["关掉登录", "收回权限", "相关材料先留着只能看"],
+      "status": "pending",
+      "handoverId": "HO-gu",
+      "evidenceDealId": null
+    }
+  ]
+}

@@ -1,6 +1,6 @@
-import { getMyDeals, getDeal, askDeal } from "../api-mock.js?v=nav18";
-import { esc } from "../esc.js?v=nav18";
-import { rulesHtml, CRM_BOUNDARY } from "../deal-rules.js?v=nav18";
+import { getMyDeals, getDeal, askDeal } from "../api-mock.js?v=nav33";
+import { esc } from "../esc.js?v=nav33";
+import { rulesHtml, CRM_BOUNDARY } from "../deal-rules.js?v=nav33";
 
 export const roles = ["employee", "manager", "boss"];
 export const title = "aiSpace";
@@ -28,6 +28,7 @@ export async function activate({ account, url, root }) {
 
   if (view === "team" && account.role !== "manager") view = "mine";
   if (view === "deal" && !dealId) view = "mine";
+  const isHr = false;
 
 function tipUrl() {
   const url = new URL("./aispace.html", location.href);
@@ -60,7 +61,7 @@ async function switchView(next, push, extra = {}) {
   if (extra.id) dealId = extra.id;
   if (extra.from) returnView = extra.from;
   if (extra.f) filter = extra.f;
-  const { softNavigate } = await import(`../soft-nav.js?v=nav18`);
+  const { softNavigate } = await import(`../soft-nav.js?v=nav33`);
   await softNavigate(tipUrl(), { push });
 }
 
@@ -84,9 +85,13 @@ async function paintMine() {
   viewRoot.innerHTML = `
     <div class="page-head">
       <h1>我的单</h1>
-      <p>只看待办。选中筛选项只高亮对应数字，不重复写一遍。</p>
+      <p>${
+        isHr
+          ? "人事这边跟进的事，比如找材料给法务。花名册对比出来的入职离职，在左边「待办事项」；谁离职还没交清，点开那条离职就能看。"
+          : "只看待办。选中筛选项只高亮对应数字，不重复写一遍。"
+      }</p>
     </div>
-    <div id="rules">${rulesHtml()}</div>
+    ${isHr ? "" : `<div id="rules">${rulesHtml()}</div>`}
     <div class="toolbar">
       <div class="seg" id="filter">
         <button type="button" data-f="all">全部</button>
@@ -96,7 +101,11 @@ async function paintMine() {
       </div>
       <span class="count-line" id="count"></span>
       <span style="flex:1"></span>
-      <button type="button" class="btn" id="btn-done">已完成（另册）</button>
+      ${
+        isHr
+          ? `<a class="btn" href="./hr-org.html?view=tasks">待办事项</a>`
+          : `<button type="button" class="btn" id="btn-done">已完成（另册）</button>`
+      }
     </div>
     <div id="board" class="deal-board"></div>`;
 
@@ -143,8 +152,8 @@ async function paintMine() {
     filter = btn.dataset.f;
     switchView("mine", false);
   };
-  document.getElementById("btn-done").onclick = () =>
-    switchView("done", true);
+  const btnDone = document.getElementById("btn-done");
+  if (btnDone) btnDone.onclick = () => switchView("done", true);
   board.querySelectorAll("[data-id]").forEach((btn) => {
     btn.onclick = () =>
       switchView("deal", true, {
@@ -372,15 +381,17 @@ async function paintDeal() {
       </p>
       ${
         deal.ruleHit
-          ? `<p class="muted small" style="margin-top:6px">入桶依据：${esc(
-              deal.ruleHit
-            )}</p>`
+          ? `<p class="muted small" style="margin-top:6px">${
+              isHr ? "为什么排在这里" : "入桶依据"
+            }：${esc(deal.ruleHit)}</p>`
           : ""
       }
     </div>
-    <p class="crm-note" style="margin:0 0 12px;padding:8px 10px;border:1px solid var(--line);background:var(--surface)">${esc(
-      CRM_BOUNDARY
-    )}</p>
+      <p class="crm-note" style="margin:0 0 12px;padding:8px 10px;border:1px solid var(--line);background:var(--surface)">${esc(
+        isHr
+          ? "这里只整理你权限内能看到的材料和原文从哪来的，不代替法务下结论。谁离职还没交清，去「待办事项」里点开那个人。"
+          : CRM_BOUNDARY
+      )}</p>
     <section class="deal-section">
       <h2>现在怎样</h2>
       <div class="deal-summary">
@@ -394,10 +405,18 @@ async function paintDeal() {
     </section>
     <section class="deal-section">
       <h2>就这一单问</h2>
-      <p class="muted small" style="margin:0 0 8px">材料没有的不会编；出处可点开。</p>
+      <p class="muted small" style="margin:0 0 8px">${
+        isHr
+          ? "材料没有的不会编；点文件名能看原文。"
+          : "材料没有的不会编；出处可点开。"
+      }</p>
       <div class="hint-row" id="hints"></div>
       <div class="ask-box">
-        <input id="q" placeholder="现在怎样 / 口径依据 / 该催什么 / 缺什么材料 / 找谁" />
+        <input id="q" placeholder="${
+          isHr
+            ? "现在怎样 / 依据在哪 / 还缺什么 / 找谁"
+            : "现在怎样 / 口径依据 / 该催什么 / 缺什么材料 / 找谁"
+        }" />
         <button class="btn btn-primary" id="btn-ask" type="button">提问</button>
       </div>
       <div id="answer"></div>
@@ -432,13 +451,15 @@ async function paintDeal() {
         .join("")
     : `<div class="empty">暂无进展记录</div>`;
 
-  const hints = [
-    "现在卡在哪？",
-    "客户说过的有依据吗？",
-    "这一单该催什么？",
-    "还缺什么材料？",
-    "这单找谁？",
-  ];
+  const hints = isHr
+    ? ["现在卡在哪？", "依据原文在哪？", "还缺什么材料？", "这单找谁？"]
+    : [
+        "现在卡在哪？",
+        "客户说过的有依据吗？",
+        "这一单该催什么？",
+        "还缺什么材料？",
+        "这单找谁？",
+      ];
   document.getElementById("hints").innerHTML = hints
     .map(
       (h) =>
@@ -466,7 +487,9 @@ async function paintDeal() {
         ${res.next ? `<div class="next">${esc(res.next)}</div>` : ""}
         ${
           res.citations?.length
-            ? `<div style="margin-top:10px"><div class="muted small">出处（点击查阅）</div>${res.citations
+            ? `<div style="margin-top:10px"><div class="muted small">${
+                isHr ? "原文从哪来（点开看）" : "出处（点击查阅）"
+              }</div>${res.citations
                 .map(citeHtml)
                 .join("")}</div>`
             : ""

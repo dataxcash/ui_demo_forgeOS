@@ -1,0 +1,15 @@
+account,name,dept,title,manager,status
+zhou.boss,周衡,管理层,老板,,active
+chen.hr,陈思,人事,人事主管,周衡,active
+wu.it,吴工,信息技术,IT 主管,周衡,active
+li.na,李娜,销售一部,销售一组负责人,周衡,active
+qian.jin,钱进,售前,售前负责人,周衡,active
+he.lan,贺兰,法务,法务专员,周衡,active
+feng.lei,冯磊,信息技术,开发,吴工,active
+sun.yue,孙悦,交付,交付工程师,周衡,active
+bai.lu,白露,售前,售前顾问,钱进,active
+liu.ke,刘可,销售一部,销售,李娜,active
+ou.wen,欧文,销售一部,销售,李娜,active
+xu.qing,许晴,售前,售前顾问,钱进,active
+zhou.xb,周小白,销售一部,销售,李娜,active
+shen.fang,沈芳,人事,人事专员,陈思,active

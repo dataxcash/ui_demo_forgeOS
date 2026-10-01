@@ -1,0 +1,20 @@
+{
+  "asOf": "2026-09-30",
+  "note": "系统里现在认的在职名单（上传新花名册之前）",
+  "people": [
+    {"account":"zhou.boss","name":"周衡","dept":"管理层","title":"老板","manager":"—","forgeStatus":"可用","space":"全公司"},
+    {"account":"chen.hr","name":"陈思","dept":"人事","title":"人事主管","manager":"周衡","forgeStatus":"可用","space":"人事"},
+    {"account":"wu.it","name":"吴工","dept":"信息技术","title":"IT 主管","manager":"周衡","forgeStatus":"可用","space":"信息技术"},
+    {"account":"li.na","name":"李娜","dept":"销售一部","title":"销售一组负责人","manager":"周衡","forgeStatus":"可用","space":"销售一部"},
+    {"account":"qian.jin","name":"钱进","dept":"售前","title":"售前负责人","manager":"周衡","forgeStatus":"可用","space":"售前"},
+    {"account":"he.lan","name":"贺兰","dept":"法务","title":"法务专员","manager":"周衡","forgeStatus":"可用","space":"法务"},
+    {"account":"feng.lei","name":"冯磊","dept":"信息技术","title":"运维","manager":"吴工","forgeStatus":"可用","space":"信息技术"},
+    {"account":"sun.yue","name":"孙悦","dept":"交付","title":"交付工程师","manager":"周衡","forgeStatus":"可用","space":"交付"},
+    {"account":"bai.lu","name":"白露","dept":"售前","title":"售前顾问","manager":"钱进","forgeStatus":"可用","space":"售前"},
+    {"account":"liu.ke","name":"刘可","dept":"销售一部","title":"销售","manager":"李娜","forgeStatus":"可用","space":"销售一部"},
+    {"account":"ou.wen","name":"欧文","dept":"销售一部","title":"销售","manager":"李娜","forgeStatus":"可用","space":"销售一部"},
+    {"account":"xu.qing","name":"许晴","dept":"销售一部","title":"销售","manager":"李娜","forgeStatus":"可用","space":"销售一部"},
+    {"account":"zhao.qiang","name":"赵强","dept":"交付","title":"交付工程师","manager":"周衡","forgeStatus":"可用","space":"交付","flag":"还有客户/项目没交接完"},
+    {"account":"gu.jun","name":"顾军","dept":"销售一部","title":"销售","manager":"李娜","forgeStatus":"可用","space":"销售一部","flag":"还有客户/项目没交接完"}
+  ]
+}

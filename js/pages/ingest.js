@@ -8,9 +8,9 @@ import {
   ingestMarkProbeReady,
   uploadIngestFiles,
   getIngestUploads,
-} from "../api-mock.js?v=nav18";
-import { confirmDialog } from "../confirm.js?v=nav18";
-import { esc } from "../esc.js?v=nav18";
+} from "../api-mock.js?v=nav33";
+import { confirmDialog } from "../confirm.js?v=nav33";
+import { esc } from "../esc.js?v=nav33";
 
 export const roles = ["employee", "manager", "boss", "hr", "it"];
 export const title = "文档入库";
@@ -85,7 +85,7 @@ async function switchView(next, pushUrl) {
     return;
   }
   if (!VIEWS[next]) next = "upload";
-  const { softNavigate } = await import("../soft-nav.js?v=nav18");
+  const { softNavigate } = await import("../soft-nav.js?v=nav33");
   await softNavigate(new URL(`./ingest.html?view=${next}`, location.href), { push: !!pushUrl });
 }
 

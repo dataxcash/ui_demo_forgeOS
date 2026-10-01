@@ -1,14 +1,14 @@
-import { esc } from "./esc.js?v=nav18";
-import { loadI18n, t } from "./i18n.js?v=nav18";
+import { esc } from "./esc.js?v=nav33";
+import { loadI18n, t } from "./i18n.js?v=nav33";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav18";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav18";
-import { confirmDialog } from "./confirm.js?v=nav18";
+} from "./session.js?v=nav33";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav33";
+import { confirmDialog } from "./confirm.js?v=nav33";
 
 const STATUS_MUTE_APPS = new Set(["aitools", "ingest"]);
 
@@ -35,7 +35,7 @@ export async function ensureShell(account, active) {
 /** @deprecated 兼容旧页；请用 ensureShell + startPage */
 export async function mountShell({ account, active }) {
   await ensureShell(account, active);
-  const { installSoftNav } = await import("./soft-nav.js?v=nav18");
+  const { installSoftNav } = await import("./soft-nav.js?v=nav33");
   installSoftNav();
 }
 
@@ -44,6 +44,7 @@ export async function refreshShellChrome(account, active) {
   shellActive = active;
   await loadI18n("zh-CN");
   const { groups, currentApp, sideItems } = resolveNav(account, active);
+  const prevApp = document.body.dataset.app || "";
   document.body.dataset.app = currentApp?.id || "";
   document.body.classList.toggle(
     "status-muted",
@@ -69,15 +70,22 @@ export async function refreshShellChrome(account, active) {
   const nav = document.getElementById("sidenav");
   if (nav) {
     const items = sideItems || [];
-    if (!items.length) {
+    const sameApp = prevApp && prevApp === (currentApp?.id || "");
+    const sameLen =
+      sameApp && nav.querySelectorAll("a[data-nav-key]").length === items.length;
+    if (sameLen && items.length) {
+      nav.querySelectorAll("a[data-nav-key]").forEach((a) => {
+        a.classList.toggle("active", a.getAttribute("data-nav-key") === active);
+      });
+    } else if (!items.length) {
       nav.innerHTML = `<div class="muted small" style="padding:14px">暂无子页</div>`;
     } else {
       nav.innerHTML = items
         .map(
           (n) =>
-            `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${esc(
-              t(n.labelKey)
-            )}</a>`
+            `<a href="${n.href}" data-nav-key="${esc(n.key)}" class="${
+              n.key === active ? "active" : ""
+            }">${esc(t(n.labelKey))}</a>`
         )
         .join("");
     }
@@ -85,15 +93,19 @@ export async function refreshShellChrome(account, active) {
 
   const rail = document.getElementById("status-rail");
   if (rail) {
-    rail.classList.remove("show");
-    rail.innerHTML = "";
-    if (!STATUS_MUTE_APPS.has(currentApp?.id)) {
+    if (STATUS_MUTE_APPS.has(currentApp?.id)) {
+      rail.classList.remove("show");
+      rail.innerHTML = "";
+    } else {
       const status = await getStatus(account, { appId: currentApp?.id || "" });
       if (status.length) {
         rail.classList.add("show");
         rail.innerHTML =
           `<span class="muted">${esc(t("status.prefix"))}：</span>` +
           status.map((s) => `<a href="${s.href}">${esc(s.text)}</a>`).join("；");
+      } else {
+        rail.classList.remove("show");
+        rail.innerHTML = "";
       }
     }
   }
@@ -202,7 +214,7 @@ function wireShellChrome(account, active) {
       if (!acc || acc.stub) return;
       setAccountId(id);
       menu.classList.remove("show");
-      const { softNavigate } = await import("./soft-nav.js?v=nav18");
+      const { softNavigate } = await import("./soft-nav.js?v=nav33");
       shellAccount = acc;
       await softNavigate(new URL(homeFor(acc), location.href), { push: true });
     });
@@ -257,7 +269,7 @@ function wireShellChrome(account, active) {
           if (typeof window.__hrPrefillNormal === "function") {
             window.__hrPrefillNormal();
           } else {
-            const { softNavigate } = await import("./soft-nav.js?v=nav18");
+            const { softNavigate } = await import("./soft-nav.js?v=nav33");
             await softNavigate(new URL("./hr-import.html", location.href), {
               push: true,
             });

@@ -2,7 +2,7 @@
  * 页面注册表：路径 → 动态模块。
  * 未登记的 .html 仍走整页跳转（如 login）。
  */
-const V = "nav18";
+const V = "nav33";
 
 function page(path) {
   return () => import(`${path}?v=${V}`);
@@ -14,8 +14,9 @@ export const PAGE_LOADERS = {
   "ingest.html": page("./pages/ingest.js"),
   "ai-tool.html": page("./pages/ai-tool.js"),
   "ai-tools.html": page("./pages/ai-tool.js"),
-  "hr-home.html": page("./pages/hr-home.js"),
-  "hr-import.html": page("./pages/hr-import.js"),
+  "hr-org.html": page("./pages/hr-org.js"),
+  "hr-home.html": page("./pages/hr-org.js"),
+  "hr-import.html": page("./pages/hr-org.js"),
   "boss-home.html": page("./pages/boss-home.js"),
   "it-home.html": page("./pages/it-home.js"),
   "it-job.html": page("./pages/it-job.js"),
@@ -42,6 +43,8 @@ const ALIASES = {
   "ingest-fleet.html": { key: "ingest.html", view: "fleet" },
   "ingest-dirs.html": { key: "ingest.html", view: "manage" },
   "sync-settings.html": { key: "ingest.html", view: "manage" },
+  "hr-home.html": { key: "hr-org.html", view: "tasks" },
+  "hr-import.html": { key: "hr-org.html", view: "upload" },
 };
 
 /** 把旧 URL 规范成注册表主地址（保留其余 query） */
