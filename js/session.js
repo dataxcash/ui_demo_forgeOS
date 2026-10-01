@@ -39,7 +39,7 @@ export function homeFor(account) {
     manager: "./aispace.html?view=mine",
     hr: "./hr-org.html?view=current",
     boss: "./boss-home.html",
-    it: "./it-home.html",
+    it: "./it-home.html?view=dashboard",
     compliance: "./compliance-stub.html",
   };
   return map[account.role] || "./login.html";
@@ -145,8 +145,36 @@ export function navGroupsFor(account) {
       id: "platform",
       appKey: "app.platform",
       items: [
-        { href: "./it-home.html", labelKey: "nav.itHome", key: "it" },
-        { href: "./it-job.html", labelKey: "nav.itJob", key: "it-job" },
+        {
+          href: "./it-home.html?view=dashboard",
+          labelKey: "nav.itDash",
+          key: "it-dashboard",
+        },
+        {
+          href: "./it-home.html?view=services",
+          labelKey: "nav.itServices",
+          key: "it-services",
+        },
+        {
+          href: "./it-home.html?view=compute",
+          labelKey: "nav.itCompute",
+          key: "it-compute",
+        },
+        {
+          href: "./it-home.html?view=aispace",
+          labelKey: "nav.itAispace",
+          key: "it-aispace",
+        },
+        {
+          href: "./it-home.html?view=remote",
+          labelKey: "nav.itRemote",
+          key: "it-remote",
+        },
+        {
+          href: "./it-home.html?view=storage",
+          labelKey: "nav.itStorage",
+          key: "it-storage",
+        },
       ],
     });
   }

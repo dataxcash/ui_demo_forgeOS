@@ -1,0 +1,50 @@
+{
+  "overall": "正常",
+  "layers": [
+    {
+      "id": "RAW",
+      "name": "模型专用面",
+      "usedTb": 0.42,
+      "totalTb": 0.8,
+      "health": "正常",
+      "note": "确定性装载通道"
+    },
+    {
+      "id": "FAST",
+      "name": "高性能工作盘",
+      "usedTb": 2.1,
+      "totalTb": 4.5,
+      "health": "正常",
+      "note": "库 / 容器 / 热对象"
+    },
+    {
+      "id": "NORMAL",
+      "name": "普通业务盘",
+      "usedTb": 3.8,
+      "totalTb": 8.0,
+      "health": "正常",
+      "note": "坏一块只伤一块"
+    },
+    {
+      "id": "HOT",
+      "name": "热备份盘",
+      "usedTb": 1.2,
+      "totalTb": 1.9,
+      "health": "正常",
+      "note": "另一通道，日常不抢带宽"
+    },
+    {
+      "id": "COLD",
+      "name": "冷备份",
+      "usedTb": 6.0,
+      "totalTb": 12.0,
+      "health": "正常",
+      "note": "冷数据"
+    }
+  ],
+  "dock": {
+    "mounted": false,
+    "label": "外挂码头",
+    "note": "插入后用于模型进料或数据导出。当前无外挂盘。"
+  }
+}

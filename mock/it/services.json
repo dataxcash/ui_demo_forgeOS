@@ -1,0 +1,79 @@
+{
+  "readyGate": "已放行",
+  "note": "存储服务就绪后，下游才允许启动。上层未就绪时，下层不能强开。",
+  "layers": [
+    {
+      "id": "storaged",
+      "name": "存储服务",
+      "role": "第一层 · 水电煤",
+      "status": "就绪",
+      "detail": "三方对账通过（宣言 / 台账 / 盘面一致）",
+      "canRestart": true,
+      "children": [
+        {
+          "id": "gateway",
+          "name": "算力网关",
+          "role": "下游",
+          "status": "运行中",
+          "detail": "推理入口正常",
+          "canRestart": true
+        },
+        {
+          "id": "engine",
+          "name": "推理引擎",
+          "role": "下游",
+          "status": "运行中",
+          "detail": "显存驻留 2 个模型",
+          "canRestart": true
+        },
+        {
+          "id": "aispace-api",
+          "name": "aiSpace 服务",
+          "role": "下游",
+          "status": "运行中",
+          "detail": "工作台 API 正常",
+          "canRestart": true
+        },
+        {
+          "id": "batch-night",
+          "name": "夜间校验作业",
+          "role": "下游 · 作业",
+          "status": "有失败",
+          "detail": "邮件段抽词：worker 内存不足，已入重试队列",
+          "canRestart": true,
+          "jobId": "J-2202"
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "J-2201",
+      "name": "夜间主题消歧",
+      "status": "成功",
+      "started": "2026-09-29 01:10",
+      "log": "合并候选 14，入库 11（资源向简报）"
+    },
+    {
+      "id": "J-2202",
+      "name": "邮件段抽词",
+      "status": "失败",
+      "started": "2026-09-29 02:40",
+      "log": "worker 内存不足，已入重试队列"
+    },
+    {
+      "id": "J-2203",
+      "name": "冲突标记扫尾",
+      "status": "排队",
+      "started": "—",
+      "log": "等待窗口 22:00"
+    },
+    {
+      "id": "J-2204",
+      "name": "展会名片清洗",
+      "status": "跑中",
+      "started": "2026-09-30 03:05",
+      "log": "进度 62%"
+    }
+  ]
+}

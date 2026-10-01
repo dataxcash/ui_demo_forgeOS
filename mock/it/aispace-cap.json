@@ -1,0 +1,19 @@
+{
+  "services": [
+    { "name": "工作台 API", "status": "正常" },
+    { "name": "检索与入库", "status": "正常" },
+    { "name": "对象存储网关", "status": "正常" }
+  ],
+  "capacity": {
+    "objectsTb": 4.6,
+    "objectsLimitTb": 8.0,
+    "hotPct": 58,
+    "coldPct": 22,
+    "note": "只看容量与服务是否健康，不看文件正文。"
+  },
+  "watermarks": [
+    { "name": "热数据水位", "value": "58%", "level": "ok" },
+    { "name": "冷数据水位", "value": "22%", "level": "ok" },
+    { "name": "对象总数", "value": "128 万", "level": "ok" }
+  ]
+}

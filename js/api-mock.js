@@ -683,12 +683,12 @@ export async function getStatus(account, opts = {}) {
     }
   }
   if (account.role === "it" && onApp("platform")) {
-    const jobs = await loadJson("../mock/it/jobs-a.json");
-    const failed = jobs.filter((j) => j.status === "失败");
-    if (failed.length) {
+    const dash = await getItDashboard();
+    const n = (dash.alerts || []).length;
+    if (n) {
       items.push({
-        text: `批炼失败 ${failed.length} 条`,
-        href: "./it-job.html",
+        text: `须处理 ${n} 项`,
+        href: "./it-home.html?view=dashboard",
       });
     }
   }
@@ -763,10 +763,55 @@ export async function getBoss() {
 
 export async function getIt() {
   await delay();
+  const services = await loadJson("../mock/it/services.json");
   return {
     layers: await loadJson("../mock/it/layers.json"),
-    jobs: await loadJson("../mock/it/jobs-a.json"),
+    jobs: services.jobs || (await loadJson("../mock/it/jobs-a.json")),
+    dashboard: await loadJson("../mock/it/dashboard.json"),
+    services,
+    compute: await loadJson("../mock/it/compute.json"),
+    aispaceCap: await loadJson("../mock/it/aispace-cap.json"),
+    remote: await loadJson("../mock/it/remote.json"),
+    storage: await loadJson("../mock/it/storage.json"),
   };
+}
+
+export async function getItDashboard() {
+  await delay();
+  return loadJson("../mock/it/dashboard.json");
+}
+
+export async function getItServices() {
+  await delay();
+  return loadJson("../mock/it/services.json");
+}
+
+export async function getItCompute() {
+  await delay();
+  return loadJson("../mock/it/compute.json");
+}
+
+export async function getItAispaceCap() {
+  await delay();
+  return loadJson("../mock/it/aispace-cap.json");
+}
+
+export async function getItRemote() {
+  await delay();
+  return loadJson("../mock/it/remote.json");
+}
+
+export async function getItStorage() {
+  await delay();
+  return loadJson("../mock/it/storage.json");
+}
+
+export async function restartItService(id) {
+  await delay(200);
+  const st = readState();
+  st.itRestarts = [...(st.itRestarts || []), { id, at: Date.now() }];
+  writeState(st);
+  return { ok: true, id };
 }
 
 export async function getCopilot(role) {
@@ -864,15 +909,22 @@ export async function askCopilot({ account, question, pageKey }) {
   }
 
   if (role === "it") {
-    const { jobs } = await getIt();
-    const failed = jobs.filter((j) => j.status === "失败");
+    const dash = await getItDashboard();
+    const svc = await getItServices();
+    const failed = (svc.jobs || []).filter((j) => j.status === "失败");
     return {
       text: cite([
-        `批炼任务 A：失败 ${failed.length}，跑中 ${jobs.filter((j) => j.status === "跑中").length}。`,
-        failed.length ? `失败任务：${failed.map((j) => j.id + " " + j.name).join("；")}` : "当前无失败任务。",
-        "资源向 Token A；经营账 B 不在本工作区。",
+        `整机总判：${dash.overall}。${dash.overallNote || ""}`,
+        failed.length
+          ? `夜间作业失败 ${failed.length} 条（资源向）。`
+          : "夜间作业当前无失败。",
+        "可问：服务树、远程探针、Token 消耗、显存。",
       ]),
-      actions: [{ id: "go-job", label: "批炼任务", href: "./it-job.html" }],
+      actions: [
+        { id: "go-dash", label: "打开总览", href: "./it-home.html?view=dashboard" },
+        { id: "go-svc", label: "服务层次", href: "./it-home.html?view=services" },
+        { id: "go-remote", label: "远程机器", href: "./it-home.html?view=remote" },
+      ],
     };
   }
 

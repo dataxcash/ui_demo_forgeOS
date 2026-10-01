@@ -1,0 +1,27 @@
+{
+  "overall": "降级可用",
+  "overallNote": "存储已就绪；1 台远程探针延迟；夜间校验有 1 条失败。",
+  "asOf": "2026-10-01 19:40",
+  "cpu": { "cores": 64, "threads": 128 },
+  "memGb": 512,
+  "vramGb": 48,
+  "vramBwTBs": 0.86,
+  "pcieBwGBs": 64,
+  "ssdTb": 15.2,
+  "gpuTops": 61.3,
+  "npuTops": null,
+  "alerts": [
+    {
+      "id": "A1",
+      "level": "warn",
+      "text": "远程探针延迟 · 李娜-笔记本",
+      "href": "./it-home.html?view=remote&q=李娜"
+    },
+    {
+      "id": "A2",
+      "level": "warn",
+      "text": "夜间校验失败 · 邮件段抽词（资源向）",
+      "href": "./it-home.html?view=services"
+    }
+  ]
+}

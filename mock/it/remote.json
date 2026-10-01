@@ -1,0 +1,227 @@
+{
+  "asOf": "2026-10-01 19:40",
+  "note": "envPD 可探测到交换机层级，以及机器挂在哪台交换机、机上跑了哪些探针/服务、何种操作系统。过滤查询用于快速定位异常节点。",
+  "switches": [
+    {
+      "id": "sw-core",
+      "name": "核心交换机 · Core-01",
+      "role": "核心",
+      "model": "接入汇聚 48口",
+      "mgmtIp": "192.168.0.1",
+      "status": "正常",
+      "parentId": null,
+      "portsUp": 4,
+      "portsTotal": 48
+    },
+    {
+      "id": "sw-office",
+      "name": "办公接入 · Acc-A",
+      "role": "接入",
+      "model": "楼层接入 24口",
+      "mgmtIp": "192.168.0.10",
+      "status": "正常",
+      "parentId": "sw-core",
+      "portsUp": 18,
+      "portsTotal": 24
+    },
+    {
+      "id": "sw-delivery",
+      "name": "交付接入 · Acc-B",
+      "role": "接入",
+      "model": "楼层接入 24口",
+      "mgmtIp": "192.168.0.11",
+      "status": "正常",
+      "parentId": "sw-core",
+      "portsUp": 11,
+      "portsTotal": 24
+    },
+    {
+      "id": "sw-lab",
+      "name": "机房接入 · Acc-Lab",
+      "role": "接入",
+      "model": "机柜接入 48口",
+      "mgmtIp": "192.168.0.12",
+      "status": "告警",
+      "parentId": "sw-core",
+      "portsUp": 6,
+      "portsTotal": 48,
+      "note": "1 台下属主机掉线"
+    }
+  ],
+  "hosts": [
+    {
+      "id": "R-01",
+      "host": "李娜-笔记本",
+      "ip": "192.168.1.56",
+      "mac": "3C:22:FB:11:22:33",
+      "owner": "李娜",
+      "dept": "销售一部",
+      "os": "Windows 11 Pro",
+      "osFamily": "Windows",
+      "arch": "x86_64",
+      "switchId": "sw-office",
+      "switchPort": "Gi1/0/12",
+      "status": "延迟",
+      "lastSeen": "12 分钟前",
+      "note": "slimSync 心跳偏慢",
+      "probes": [
+        { "name": "slimSync", "kind": "进料探针", "version": "1.4.2", "status": "延迟" },
+        { "name": "mailProbe", "kind": "邮件探针", "version": "0.9.1", "status": "在线" }
+      ],
+      "services": [
+        { "name": "Rust SSHD", "kind": "管理面", "version": "0.3.1", "status": "在线" }
+      ]
+    },
+    {
+      "id": "R-02",
+      "host": "交付-工站-03",
+      "ip": "192.168.1.90",
+      "mac": "3C:22:FB:44:55:66",
+      "owner": "孙悦",
+      "dept": "交付",
+      "os": "Windows 10 IoT",
+      "osFamily": "Windows",
+      "arch": "x86_64",
+      "switchId": "sw-delivery",
+      "switchPort": "Gi1/0/8",
+      "status": "在线",
+      "lastSeen": "刚见到",
+      "note": "",
+      "probes": [
+        { "name": "slimSync", "kind": "进料探针", "version": "1.4.2", "status": "在线" }
+      ],
+      "services": [
+        { "name": "Rust SSHD", "kind": "管理面", "version": "0.3.1", "status": "在线" }
+      ]
+    },
+    {
+      "id": "R-03",
+      "host": "会议室-枢纽",
+      "ip": "192.168.1.12",
+      "mac": "B8:27:EB:01:02:03",
+      "owner": "吴工",
+      "dept": "信息技术",
+      "os": "Debian 12",
+      "osFamily": "Linux",
+      "arch": "aarch64",
+      "switchId": "sw-office",
+      "switchPort": "Gi1/0/2",
+      "status": "在线",
+      "lastSeen": "刚见到",
+      "note": "楼层 slimHub",
+      "probes": [],
+      "services": [
+        { "name": "slimHub", "kind": "枢纽", "version": "2.1.0", "status": "在线" },
+        { "name": "envPD-agent", "kind": "探测代理", "version": "1.2.0", "status": "在线" }
+      ]
+    },
+    {
+      "id": "R-04",
+      "host": "顾军-旧本",
+      "ip": "192.168.1.77",
+      "mac": "3C:22:FB:77:88:99",
+      "owner": "顾军",
+      "dept": "销售一部",
+      "os": "Windows 10",
+      "osFamily": "Windows",
+      "arch": "x86_64",
+      "switchId": "sw-lab",
+      "switchPort": "Gi1/0/21",
+      "status": "掉线",
+      "lastSeen": "2 天前",
+      "note": "疑似未开机；多探针均无心跳",
+      "probes": [
+        { "name": "slimSync", "kind": "进料探针", "version": "1.3.9", "status": "掉线" },
+        { "name": "mailProbe", "kind": "邮件探针", "version": "0.8.4", "status": "掉线" }
+      ],
+      "services": [
+        { "name": "Rust SSHD", "kind": "管理面", "version": "0.2.8", "status": "掉线" }
+      ]
+    },
+    {
+      "id": "R-05",
+      "host": "人事-台式机",
+      "ip": "192.168.1.41",
+      "mac": "3C:22:FB:AA:BB:CC",
+      "owner": "陈思",
+      "dept": "人事",
+      "os": "Windows 11",
+      "osFamily": "Windows",
+      "arch": "x86_64",
+      "switchId": "sw-office",
+      "switchPort": "Gi1/0/15",
+      "status": "在线",
+      "lastSeen": "3 分钟前",
+      "note": "",
+      "probes": [
+        { "name": "slimSync", "kind": "进料探针", "version": "1.4.2", "status": "在线" }
+      ],
+      "services": [
+        { "name": "Rust SSHD", "kind": "管理面", "version": "0.3.1", "status": "在线" }
+      ]
+    },
+    {
+      "id": "R-06",
+      "host": "仓库-边缘盒",
+      "ip": "192.168.1.200",
+      "mac": "DC:A6:32:10:20:30",
+      "owner": "吴工",
+      "dept": "信息技术",
+      "os": "Ubuntu 22.04",
+      "osFamily": "Linux",
+      "arch": "aarch64",
+      "switchId": "sw-delivery",
+      "switchPort": "Gi1/0/20",
+      "status": "未部署",
+      "lastSeen": "—",
+      "note": "已发现主机，探针尚未部署",
+      "probes": [],
+      "services": [
+        { "name": "Rust SSHD", "kind": "管理面", "version": "0.3.1", "status": "在线" }
+      ]
+    },
+    {
+      "id": "R-07",
+      "host": "设计-Mac-02",
+      "ip": "192.168.1.63",
+      "mac": "A4:83:E7:12:34:56",
+      "owner": "钱进",
+      "dept": "售前",
+      "os": "macOS 14",
+      "osFamily": "macOS",
+      "arch": "arm64",
+      "switchId": "sw-office",
+      "switchPort": "Gi1/0/19",
+      "status": "在线",
+      "lastSeen": "1 分钟前",
+      "note": "",
+      "probes": [
+        { "name": "slimSync", "kind": "进料探针", "version": "1.4.0", "status": "在线" },
+        { "name": "fileWatch", "kind": "目录哨兵", "version": "0.4.2", "status": "在线" }
+      ],
+      "services": []
+    },
+    {
+      "id": "R-08",
+      "host": "一体机-本机",
+      "ip": "192.168.1.2",
+      "mac": "00:1A:2B:3C:4D:5E",
+      "owner": "吴工",
+      "dept": "信息技术",
+      "os": "ForgeOS 注入 OS",
+      "osFamily": "Linux",
+      "arch": "x86_64",
+      "switchId": "sw-lab",
+      "switchPort": "Gi1/0/1",
+      "status": "在线",
+      "lastSeen": "刚见到",
+      "note": "主控一体机",
+      "probes": [],
+      "services": [
+        { "name": "envPD", "kind": "探测编排", "version": "1.2.0", "status": "在线" },
+        { "name": "slimHub", "kind": "枢纽", "version": "2.1.0", "status": "在线" },
+        { "name": "forgeos-storaged", "kind": "存储服务", "version": "0.9.0", "status": "在线" }
+      ]
+    }
+  ]
+}
