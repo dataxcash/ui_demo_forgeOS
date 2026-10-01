@@ -1,14 +1,14 @@
-import { esc } from "./esc.js?v=nav15";
-import { loadI18n, t } from "./i18n.js?v=nav15";
+import { esc } from "./esc.js?v=nav16";
+import { loadI18n, t } from "./i18n.js?v=nav16";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav15";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav15";
-import { confirmDialog } from "./confirm.js?v=nav15";
+} from "./session.js?v=nav16";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav16";
+import { confirmDialog } from "./confirm.js?v=nav16";
 
 /** 这些 App 不挂全局事态条（跟单待办等） */
 const STATUS_MUTE_APPS = new Set(["aitools", "ingest"]);

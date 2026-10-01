@@ -562,7 +562,7 @@ export async function getStatus(account, opts = {}) {
     if (urgent.length) {
       items.push({
         text: `${urgent.length} 单须尽快处理`,
-        href: "./my-deals.html?f=urgent",
+        href: "./aispace.html?view=mine&f=urgent",
       });
     }
   }

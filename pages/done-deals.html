@@ -2,52 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>已完成 · aiSpace</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <meta http-equiv="refresh" content="0;url=./aispace.html?view=done" />
+  <title>转向已完成</title>
+  <script>location.replace("./aispace.html?view=done");</script>
 </head>
-<body>
-  <div id="page-root">
-    <p class="muted small"><a href="./my-deals.html">← 我的单</a></p>
-    <div class="page-head">
-      <h1>已完成</h1>
-      <p>与「我的单」分开：这里只作历史查阅，不参与紧急排序。</p>
-    </div>
-    <div id="board" class="deal-board"></div>
-  </div>
-  <script type="module">
-    import { requireAccount, guardPage } from "../js/session.js?v=nav13";
-    import { mountShell } from "../js/shell.js?v=nav13";
-    import { getMyDeals } from "../js/api-mock.js?v=nav13";
-    import { esc } from "../js/esc.js?v=nav13";
-
-    const account = await requireAccount();
-    if (!guardPage(account, ["employee", "manager"])) throw 0;
-    await mountShell({ account, active: "my-deals" });
-
-    const list = await getMyDeals(account, { scope: "mine", openOnly: false });
-    const board = document.getElementById("board");
-    if (!list.length) {
-      board.innerHTML = `<div class="empty">暂无已完成记录（演示数据里你名下可能没有）。</div>`;
-    } else {
-      board.innerHTML = list
-        .map(
-          (d) => `<a class="deal-row" href="./deal.html?id=${esc(d.id)}">
-            <div class="deal-main">
-              <div class="deal-title">${esc(d.name)}</div>
-              <div class="deal-meta">
-                <span class="pill">${esc(d.type)}</span>
-                <span class="pill ok">${esc(d.status)}</span>
-              </div>
-              <div class="deal-why">${esc(d.why)}</div>
-            </div>
-            <div class="deal-side"><span class="deal-go">查看</span></div>
-          </a>`
-        )
-        .join("");
-    }
-  </script>
-</body>
+<body><p><a href="./aispace.html?view=done">已完成</a></p></body>
 </html>

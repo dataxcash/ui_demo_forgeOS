@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>查阅材料 · ForgeOS</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav13" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav13" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav13" />
+  <link rel="stylesheet" href="../css/tokens.css?v=nav16" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav16" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav16" />
 </head>
 <body>
   <div id="page-root">
@@ -15,10 +15,10 @@
     <div class="card" id="body"></div>
   </div>
   <script type="module">
-    import { requireAccount, guardPage } from "../js/session.js?v=nav13";
-    import { mountShell } from "../js/shell.js?v=nav13";
-    import { getDeal } from "../js/api-mock.js?v=nav13";
-    import { esc } from "../js/esc.js?v=nav13";
+    import { requireAccount, guardPage } from "../js/session.js?v=nav16";
+    import { mountShell } from "../js/shell.js?v=nav16";
+    import { getDeal } from "../js/api-mock.js?v=nav16";
+    import { esc } from "../js/esc.js?v=nav16";
 
     const account = await requireAccount();
     if (!guardPage(account, ["employee", "manager", "boss"])) throw 0;
@@ -29,10 +29,13 @@
     const file = q.get("file") || "材料";
     const seg = q.get("seg") || "";
     const summary = q.get("summary") || "";
+    const from = q.get("from") || "mine";
 
     document.getElementById("back").innerHTML = dealId
-      ? `<a href="./deal.html?id=${esc(dealId)}">← 返回这一单</a>`
-      : `<a href="./my-deals.html">← 我的单</a>`;
+      ? `<a href="./aispace.html?view=deal&id=${esc(dealId)}&from=${esc(
+          from
+        )}">← 返回这一单</a>`
+      : `<a href="./aispace.html?view=mine">← 我的单</a>`;
 
     document.title = `${file} · 查阅`;
     document.getElementById("head").innerHTML = `
@@ -45,9 +48,9 @@
       if (pack) {
         const hit = pack.evidence.find((e) => e.file === file);
         if (hit) {
-          extra = `<p class="small">所属跟单：<a href="./deal.html?id=${esc(dealId)}">${esc(
-            pack.deal.name
-          )}</a></p>
+          extra = `<p class="small">所属跟单：<a href="./aispace.html?view=deal&id=${esc(
+            dealId
+          )}&from=${esc(from)}">${esc(pack.deal.name)}</a></p>
           <p class="small muted">摘录：${esc(hit.summary)}</p>`;
         }
       }

@@ -35,8 +35,8 @@ export async function requireAccount() {
 
 export function homeFor(account) {
   const map = {
-    employee: "./my-deals.html",
-    manager: "./my-deals.html",
+    employee: "./aispace.html?view=mine",
+    manager: "./aispace.html?view=mine",
     hr: "./hr-home.html",
     boss: "./boss-home.html",
     it: "./it-home.html",
@@ -97,11 +97,15 @@ export function navGroupsFor(account) {
 
   if (account.role === "employee" || account.role === "manager") {
     const items = [
-      { href: "./my-deals.html", labelKey: "nav.myDeals", key: "my-deals" },
+      {
+        href: "./aispace.html?view=mine",
+        labelKey: "nav.myDeals",
+        key: "my-deals",
+      },
     ];
     if (account.role === "manager") {
       items.push({
-        href: "./team-deals.html",
+        href: "./aispace.html?view=team",
         labelKey: "nav.teamDeals",
         key: "team-deals",
       });
