@@ -62,12 +62,11 @@ function ingestApp(account) {
   return { id: "ingest", appKey: "app.ingest", items };
 }
 
-/** 全员：ai 工具 */
+/** 全员：ai 工具 —— 按「活」进，无能力展览壳 */
 function aiToolsApp() {
   return {
     appKey: "app.aitools",
     items: [
-      { href: "./ai-tools.html", labelKey: "nav.aiTools", key: "ai-tools" },
       { href: "./ai-tool.html?id=ocr", labelKey: "nav.aiOcr", key: "ai-ocr" },
       { href: "./ai-tool.html?id=asr", labelKey: "nav.aiAsr", key: "ai-asr" },
       { href: "./ai-tool.html?id=tts", labelKey: "nav.aiTts", key: "ai-tts" },

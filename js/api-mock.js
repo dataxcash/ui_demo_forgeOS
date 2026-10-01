@@ -257,9 +257,9 @@ export async function getAiTool(id) {
   return tools.find((t) => t.id === id) || null;
 }
 
-/** 调用基础 AI 能力：前台交材料+用户身份，后台跑模型，DEMO 回演示结果 */
+/** 调用基础 AI 能力：交材料+用户 → 当场结果 */
 export async function runAiTool(account, toolId, payload) {
-  await delay(520);
+  await delay(480);
   const tool = await getAiTool(toolId);
   if (!tool) return { ok: false, error: "未知能力" };
   const text = (payload?.text || "").trim();
@@ -270,6 +270,23 @@ export async function runAiTool(account, toolId, payload) {
   if (tool.input === "text" && !text) {
     return { ok: false, error: "请先填写内容" };
   }
+
+  let resultText = tool.sampleResult || "";
+  let points = null;
+  let risks = null;
+  if (toolId === "tts") {
+    resultText = text;
+  } else if (toolId === "content") {
+    points = tool.samplePoints || [];
+    risks = tool.sampleRisks || [];
+    resultText =
+      "要点：\n" +
+      points.map((p, i) => `${i + 1}. ${p}`).join("\n") +
+      (risks.length
+        ? "\n风险：\n" + risks.map((r) => `· ${r}`).join("\n")
+        : "");
+  }
+
   const st = readState();
   const job = {
     id: "ai-" + Date.now(),
@@ -282,7 +299,10 @@ export async function runAiTool(account, toolId, payload) {
       tool.input === "file"
         ? files.map((f) => f.name).join("；")
         : text.slice(0, 80) + (text.length > 80 ? "…" : ""),
-    result: tool.sampleResult || "（无演示结果）",
+    result: resultText,
+    points,
+    risks,
+    speakText: toolId === "tts" ? text : null,
   };
   const hist = [...(st.aiToolRuns || [])];
   hist.unshift(job);
