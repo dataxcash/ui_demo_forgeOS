@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav48";
-import { confirmDialog } from "../confirm.js?v=nav48";
-import { esc } from "../esc.js?v=nav48";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav48";
+} from "../api-mock.js?v=nav49";
+import { confirmDialog } from "../confirm.js?v=nav49";
+import { esc } from "../esc.js?v=nav49";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav49";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav48");
+    const { softNavigate } = await import("../soft-nav.js?v=nav49");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -68,58 +68,187 @@ export async function activate({ account, url, root }) {
   }
 
   async function paintDashboard() {
-    document.title = "总览 · 系统管理";
+    document.title = "运行状态 · 系统管理";
     const d = await getItDashboard();
-    const npu =
-      d.npuTops == null ? "—" : `${Number(d.npuTops).toLocaleString()} TOPS`;
+    const ranges = ["5m", "1h", "6h", "24h"];
+    let range =
+      new URL(location.href).searchParams.get("range") ||
+      d.defaultRange ||
+      "5m";
+    if (!ranges.includes(range)) range = "5m";
 
-    root.innerHTML = `
-      <div class="flash" id="flash"></div>
-      ${headHtml(
-        "it-dashboard",
-        "总览",
-        "整机能力与当前总判。只看资源与设施，不看业务内容。"
-      )}
-      <div class="it-overall card">
-        <div class="it-overall-main">
-          <span class="pill ${overallClass(d.overall)}">${esc(d.overall)}</span>
-          <span class="muted small">截至 ${esc(d.asOf)}</span>
-        </div>
-        <p style="margin:8px 0 0">${esc(d.overallNote || "")}</p>
-      </div>
-      <h2 class="it-sec-title">整机能力</h2>
-      <div class="it-metrics">
-        ${metric("CPU", `${d.cpu.cores} 核 / ${d.cpu.threads} 线程`, "./it-home.html?view=compute")}
-        ${metric("内存", `${d.memGb} GB`, "./it-home.html?view=compute")}
-        ${metric("最大可用显存", `${d.vramGb} GB`, "./it-home.html?view=compute")}
-        ${metric("显存带宽", `${d.vramBwTBs} TB/s`, "./it-home.html?view=compute")}
-        ${metric("PCIe 带宽", `${d.pcieBwGBs} GB/s`, "./it-home.html?view=compute")}
-        ${metric("SSD 存储", `${d.ssdTb} TB`, "./it-home.html?view=storage")}
-        ${metric("GPU 算力", `${d.gpuTops} TOPS`, "./it-home.html?view=compute")}
-        ${metric("NPU 算力", npu, "./it-home.html?view=compute")}
-      </div>
-      <h2 class="it-sec-title">须处理</h2>
-      <div class="deal-board" id="alerts"></div>
-      <div class="toolbar" style="margin-top:14px">
-        <a class="btn" href="./it-home.html?view=services">服务层次</a>
-        <a class="btn" href="./it-home.html?view=remote">远程机器</a>
-        <a class="btn" href="./it-home.html?view=compute">算力与 GPU</a>
-        <a class="btn" href="./it-home.html?view=aispace">aiSpace 后端</a>
-      </div>`;
+    function dualChart(a, b, opts = {}) {
+      const w = opts.w || 560;
+      const h = opts.h || 120;
+      const pad = 4;
+      const series = [
+        { vals: (a || []).map(Number), cls: "it-chart-a" },
+        { vals: (b || []).map(Number), cls: "it-chart-b" },
+      ];
+      const n = Math.max(...series.map((s) => s.vals.length), 1);
+      const step = n > 1 ? (w - pad * 2) / (n - 1) : 0;
+      const lines = series
+        .map((s) => {
+          if (!s.vals.length) return "";
+          const max = Math.max(...s.vals, 1);
+          const min = Math.min(...s.vals, 0);
+          const span = Math.max(max - min, 1);
+          const pts = s.vals
+            .map((v, i) => {
+              const x = pad + i * step;
+              const y = h - pad - ((v - min) / span) * (h - pad * 2);
+              return `${x.toFixed(1)},${y.toFixed(1)}`;
+            })
+            .join(" ");
+          return `<polyline class="${s.cls}" fill="none" stroke-width="1.5" points="${pts}"/>`;
+        })
+        .join("");
+      return `<svg class="it-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>`;
+    }
 
-    const alerts = root.querySelector("#alerts");
-    alerts.innerHTML = (d.alerts || []).length
-      ? d.alerts
-          .map(
-            (a) => `<a class="deal-row" href="${esc(a.href)}" style="display:flex;text-decoration:none;color:inherit">
-          <div class="deal-main">
-            <div class="deal-title">${esc(a.text)}</div>
+    function render() {
+      const r = d.resources || {};
+      const inf = d.inference || {};
+      const ser = (d.series && d.series[range]) || {};
+      const alerts = (d.alerts || []).slice(0, 2);
+      const ico = iconForNavKey("it-dashboard");
+
+      root.innerHTML = `
+        <div class="flash" id="flash"></div>
+        <div class="page-head it-run-head">
+          <div>
+            <h1>${pageTitleHtml(ico, "运行状态")}</h1>
+            <p>System &amp; Inference · 截至 ${esc(d.asOf || "")}</p>
           </div>
-          <div class="deal-side"><span class="pill ${a.level === "danger" ? "danger" : "warn"}">处理</span></div>
-        </a>`
-          )
-          .join("")
-      : `<div class="empty">暂无须立即处理的项。</div>`;
+          <div class="it-range" role="tablist" aria-label="时间范围">
+            ${ranges
+              .map(
+                (x) =>
+                  `<button type="button" class="it-range-btn${
+                    x === range ? " active" : ""
+                  }" data-range="${x}" role="tab" aria-selected="${
+                    x === range
+                  }">${x}</button>`
+              )
+              .join("")}
+          </div>
+        </div>
+
+        <div class="it-res-row">
+          <div class="it-res-strip">
+            ${resCell("GPU", `${r.gpu ?? "—"}%`)}
+            ${resCell("CPU", `${r.cpu ?? "—"}%`)}
+            ${resCell("MEM", `${r.mem ?? "—"}%`)}
+            ${resCell("KV", `${r.kvCache ?? "—"}%`)}
+          </div>
+          <div class="it-alert-strip" id="alerts">
+            ${
+              alerts.length
+                ? alerts
+                    .map(
+                      (a) =>
+                        `<a class="it-alert-chip ${
+                          a.level === "danger" ? "danger" : "warn"
+                        }" href="${esc(a.href)}">${esc(a.text)}</a>`
+                    )
+                    .join("")
+                : `<span class="muted small">暂无须处理</span>`
+            }
+          </div>
+        </div>
+
+        <h2 class="it-sec-title">SYSTEM</h2>
+        <div class="card it-chart-card">
+          <div class="it-chart-meta">
+            <span class="dash-k">GPU Util / VRAM</span>
+            <span class="it-chart-legend">
+              <i class="it-leg-a"></i> Util %
+              <i class="it-leg-b"></i> VRAM %
+            </span>
+          </div>
+          ${dualChart(ser.gpuUtil, ser.gpuVram)}
+        </div>
+
+        <h2 class="it-sec-title">INFERENCE</h2>
+        <div class="it-kpi-row">
+          <div class="it-kpi">
+            <div class="dash-k">TTFT</div>
+            <div class="it-metric-v">${inf.ttftP50Ms ?? "—"}<span class="it-kpi-unit">ms</span></div>
+            <div class="muted small">p50 · p95 ${inf.ttftP95Ms ?? "—"} ms</div>
+          </div>
+          <div class="it-kpi">
+            <div class="dash-k">TOK/S</div>
+            <div class="it-metric-v">${fmtNum(inf.tokPerSecAgg ?? 0)}</div>
+            <div class="muted small">整机 · 单请求 ${inf.tokPerSecPerReq ?? "—"}</div>
+          </div>
+          <div class="it-kpi">
+            <div class="dash-k">进行中</div>
+            <div class="it-metric-v">${inf.active ?? "—"}</div>
+            <div class="muted small">Active requests</div>
+          </div>
+          <div class="it-kpi">
+            <div class="dash-k">排队</div>
+            <div class="it-metric-v">${inf.queue ?? "—"}</div>
+            <div class="muted small">Queue</div>
+          </div>
+        </div>
+        <div class="card it-chart-card">
+          <div class="it-chart-meta">
+            <span class="dash-k">TTFT / TOK/S</span>
+            <span class="it-chart-legend">
+              <i class="it-leg-a"></i> TTFT p50
+              <i class="it-leg-b"></i> TOK/S 整机
+            </span>
+          </div>
+          ${dualChart(ser.ttftP50, ser.tokPerSec)}
+        </div>
+
+        <h2 class="it-sec-title">MODELS</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>TTFT</th>
+              <th>TOK/S</th>
+              <th>Active</th>
+              <th>Queue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(d.models || [])
+              .map(
+                (m) => `<tr>
+              <td><strong>${esc(m.name)}</strong></td>
+              <td>${m.ttftP50Ms ?? "—"} ms</td>
+              <td>${m.tokPerSec ?? "—"}</td>
+              <td>${m.active ?? "—"}</td>
+              <td>${m.queue ?? "—"}</td>
+            </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>`;
+
+      root.querySelector(".it-range").onclick = (e) => {
+        const btn = e.target.closest("[data-range]");
+        if (!btn) return;
+        range = btn.getAttribute("data-range");
+        const u = new URL(location.href);
+        u.searchParams.set("view", "dashboard");
+        u.searchParams.set("range", range);
+        history.replaceState({}, "", u);
+        render();
+      };
+    }
+
+    function resCell(label, value) {
+      return `<div class="it-res">
+        <span class="dash-k">${esc(label)}</span>
+        <strong>${esc(String(value))}</strong>
+      </div>`;
+    }
+
+    render();
   }
 
   function metric(label, value, href) {
@@ -127,6 +256,13 @@ export async function activate({ account, url, root }) {
       <div class="dash-k">${esc(label)}</div>
       <div class="it-metric-v">${esc(value)}</div>
     </a>`;
+  }
+
+  function capMetric(label, value) {
+    return `<div class="it-metric" style="cursor:default">
+      <div class="dash-k">${esc(label)}</div>
+      <div class="it-metric-v">${esc(value)}</div>
+    </div>`;
   }
 
   async function paintServices() {
@@ -299,6 +435,11 @@ export async function activate({ account, url, root }) {
 
     function render() {
       const m = models.find((x) => x.id === selected) || models[0];
+      const cap = c.capacity || {};
+      const npu =
+        cap.npuTops == null
+          ? "—"
+          : `${Number(cap.npuTops).toLocaleString()} TOPS`;
       root.innerHTML = `
         ${headHtml(
           "it-compute",
@@ -306,13 +447,44 @@ export async function activate({ account, url, root }) {
           `${c.note || ""} 截至 ${c.asOf || ""}。`
         )}
 
-        <div class="grid-2">
+        <h2 class="it-sec-title">${esc(cap.title || "静态能力 / 容量")}</h2>
+        <p class="muted small" style="margin:-4px 0 8px">${esc(
+          cap.note || "这台机器理论上有什么能力；运行态请看「运行状态」。"
+        )}</p>
+        <div class="it-metrics">
+          ${capMetric(
+            "CPU",
+            cap.cpu ? `${cap.cpu.cores} 核 / ${cap.cpu.threads} 线程` : "—"
+          )}
+          ${capMetric("内存", cap.memGb != null ? `${cap.memGb} GB` : "—")}
+          ${capMetric(
+            "最大可用显存",
+            cap.vramGb != null ? `${cap.vramGb} GB` : "—"
+          )}
+          ${capMetric(
+            "显存带宽",
+            cap.vramBwTBs != null ? `${cap.vramBwTBs} TB/s` : "—"
+          )}
+          ${capMetric(
+            "PCIe 带宽",
+            cap.pcieBwGBs != null ? `${cap.pcieBwGBs} GB/s` : "—"
+          )}
+          ${capMetric("SSD 存储", cap.ssdTb != null ? `${cap.ssdTb} TB` : "—")}
+          ${capMetric(
+            "GPU 算力",
+            cap.gpuTops != null ? `${cap.gpuTops} TOPS` : "—"
+          )}
+          ${capMetric("NPU 算力", npu)}
+        </div>
+
+        <div class="grid-2" style="margin-top:14px">
           <div class="card">
             <div class="dash-k">算力服务</div>
             <p style="margin:6px 0 0">
               <span class="pill ok">${esc(c.computeService.status)}</span>
               · 约 ${esc(String(c.computeService.qps))} 问/秒
               · 排队 ${esc(String(c.computeService.queue))}
+              · REQ/S ${esc(String(c.computeService.reqPerSec ?? c.computeService.qps))}
             </p>
           </div>
           <div class="card">

@@ -1158,16 +1158,20 @@ export async function askCopilot({ account, question, pageKey }) {
     const dash = await getItDashboard();
     const svc = await getItServices();
     const failed = (svc.jobs || []).filter((j) => j.status === "失败");
+    const r = dash.resources || {};
+    const inf = dash.inference || {};
+    const nAlert = (dash.alerts || []).length;
     return {
       text: cite([
-        `整机总判：${dash.overall}。${dash.overallNote || ""}`,
+        `运行状态：GPU ${r.gpu ?? "—"}% · KV ${r.kvCache ?? "—"}% · TTFT ${inf.ttftP50Ms ?? "—"} ms · 排队 ${inf.queue ?? "—"}。`,
+        nAlert ? `须处理 ${nAlert} 项。` : "暂无须处理项。",
         failed.length
           ? `夜间作业失败 ${failed.length} 条。`
           : "夜间作业当前无失败。",
-        "可问：服务树、远程探针、Token 消耗、显存。",
+        "可问：推理性能、服务树、远程探针、Token 消耗。",
       ]),
       actions: [
-        { id: "go-dash", label: "打开总览", href: "./it-home.html?view=dashboard" },
+        { id: "go-dash", label: "运行状态", href: "./it-home.html?view=dashboard" },
         { id: "go-svc", label: "服务层次", href: "./it-home.html?view=services" },
         { id: "go-remote", label: "远程机器", href: "./it-home.html?view=remote" },
       ],
