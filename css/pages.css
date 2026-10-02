@@ -1121,6 +1121,79 @@ a.tool-card:hover {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+.it-dep-graph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 8px 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.it-dep-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+}
+.it-dep-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.it-dep-fork,
+.it-dep-join {
+  display: flex;
+  justify-content: center;
+  gap: 88px;
+  height: 18px;
+  position: relative;
+  width: 220px;
+}
+.it-dep-fork::before,
+.it-dep-join::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 8px;
+  background: var(--line-strong, var(--line));
+  transform: translateX(-50%);
+}
+.it-dep-fork::after,
+.it-dep-join::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 120px;
+  height: 1px;
+  background: var(--line-strong, var(--line));
+  transform: translateX(-50%);
+}
+.it-dep-fork span,
+.it-dep-join span {
+  width: 1px;
+  height: 10px;
+  background: var(--line-strong, var(--line));
+  margin-top: 8px;
+}
+.it-dep-line {
+  width: 1px;
+  height: 16px;
+  background: var(--line-strong, var(--line));
+}
+.it-obj-store {
+  padding: 12px 14px;
+}
 .it-svc-layer {
   border-left: 3px solid var(--accent);
   padding-left: 10px;

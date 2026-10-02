@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav52";
-import { confirmDialog } from "../confirm.js?v=nav52";
-import { esc } from "../esc.js?v=nav52";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav52";
+} from "../api-mock.js?v=nav53";
+import { confirmDialog } from "../confirm.js?v=nav53";
+import { esc } from "../esc.js?v=nav53";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav53";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav52");
+    const { softNavigate } = await import("../soft-nav.js?v=nav53");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -724,55 +724,112 @@ export async function activate({ account, url, root }) {
     const a = await getItAispaceCap();
     const title = a.pageTitle || "aiSpace 后端";
     document.title = `${title} · 系统管理`;
-    const usedPct = Math.round(
-      (a.capacity.objectsTb / a.capacity.objectsLimitTb) * 100
-    );
+    const rt = a.runtime || {};
+    const store = a.objectStore || a.capacity || {};
+    const usedTb = store.usedTb ?? store.objectsTb;
+    const limitTb = store.limitTb ?? store.objectsLimitTb;
+    const usedPct =
+      usedTb != null && limitTb
+        ? Math.round((usedTb / limitTb) * 100)
+        : 0;
+    const services = a.services || [];
+
     root.innerHTML = `
-      ${headHtml("it-aispace", title, a.pageSub || a.capacity.note || "")}
-      <h2 class="it-sec-title">${esc(a.servicesTitle || "后端组件")}</h2>
-      <div class="grid-2">
-        ${a.services
-          .map(
-            (s) => `<div class="card">
-            <div class="deal-title"><code>${esc(s.name || s.id)}</code>
-              ${s.kind ? `<span class="pill" style="margin-left:6px">${esc(s.kind)}</span>` : ""}
-            </div>
-            <div class="deal-meta" style="margin-top:6px">
-              <span class="pill ${s.status === "正常" ? "ok" : "warn"}">${esc(
-                s.status
-              )}</span>
-              <span class="muted">${esc(s.role || "")}</span>
-            </div>
-            ${
-              s.detail
-                ? `<p class="muted small" style="margin:8px 0 0">${esc(
-                    s.detail
-                  )}</p>`
-                : ""
-            }
-          </div>`
-          )
-          .join("")}
+      ${headHtml(
+        "it-aispace",
+        title,
+        `${a.pageSub || "Runtime & Object Store"} · 截至 ${a.asOf || ""}`
+      )}
+
+      <div class="it-kpi-row">
+        <div class="it-kpi">
+          <div class="dash-k">REQUESTS</div>
+          <div class="it-metric-v">${rt.requestsPerSec ?? "—"}<span class="it-kpi-unit">/s</span></div>
+          <div class="muted small">后端 API</div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">P95</div>
+          <div class="it-metric-v">${rt.p95Ms ?? "—"}<span class="it-kpi-unit">ms</span></div>
+          <div class="muted small">编排延迟</div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">ERROR</div>
+          <div class="it-metric-v">${rt.errorRatePct ?? "—"}<span class="it-kpi-unit">%</span></div>
+          <div class="muted small">错误率</div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">QUEUE</div>
+          <div class="it-metric-v">${rt.queue ?? "—"}</div>
+          <div class="muted small">待处理</div>
+        </div>
       </div>
-      <h2 class="it-sec-title">${esc(a.capacity.title || "对象库用量")}</h2>
-      <div class="card">
-        <div class="stat">${a.capacity.objectsTb} TB
-          <span class="stat-label">/ ${a.capacity.objectsLimitTb} TB</span></div>
-        <div class="it-bar"><i style="width:${usedPct}%"></i></div>
-        <p class="muted small" style="margin:6px 0 0">已用约 ${usedPct}% · ${esc(
-          a.capacity.note || ""
-        )}</p>
+
+      <h2 class="it-sec-title">RUNTIME</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Status</th>
+            <th>Uptime</th>
+            <th>CPU</th>
+            <th>MEM</th>
+            <th>Dependency</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${services
+            .map(
+              (s) => `<tr>
+              <td><strong><code>${esc(s.name || s.id)}</code></strong></td>
+              <td><span class="pill ${statusPill(s.status)}">${esc(
+                s.status || "—"
+              )}</span></td>
+              <td class="small">${esc(s.uptime || "—")}</td>
+              <td class="small">${s.cpuPct != null ? `${s.cpuPct}%` : "—"}</td>
+              <td class="small">${s.memGb != null ? `${s.memGb} GB` : "—"}</td>
+              <td class="small muted">${esc(
+                (s.deps || []).join(" / ") || "—"
+              )}</td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+
+      <h2 class="it-sec-title">DEPENDENCIES</h2>
+      <div class="it-dep-graph" aria-label="依赖拓扑">
+        <div class="it-dep-row"><span class="it-dep-node">aispace</span></div>
+        <div class="it-dep-fork" aria-hidden="true"><span></span><span></span></div>
+        <div class="it-dep-row it-dep-pair">
+          <span class="it-dep-node">slimgraphd</span>
+          <span class="it-dep-node">slimRAG</span>
+        </div>
+        <div class="it-dep-join" aria-hidden="true"><span></span><span></span></div>
+        <div class="it-dep-row"><span class="it-dep-node">obj-gw</span></div>
+        <div class="it-dep-line" aria-hidden="true"></div>
+        <div class="it-dep-row"><span class="it-dep-node muted">storaged</span></div>
       </div>
-      <h2 class="it-sec-title">水位</h2>
-      <div class="it-metrics">
-        ${a.watermarks
-          .map(
-            (w) => `<div class="it-metric" style="cursor:default">
-            <div class="dash-k">${esc(w.name)}</div>
-            <div class="it-metric-v">${esc(w.value)}</div>
-          </div>`
-          )
-          .join("")}
+
+      <h2 class="it-sec-title">OBJECT STORE</h2>
+      <div class="card it-obj-store">
+        <div class="it-svc-row">
+          <div>
+            <div class="stat">${usedTb ?? "—"} TB
+              <span class="stat-label">/ ${limitTb ?? "—"} TB</span></div>
+            <p class="muted small" style="margin:6px 0 0">
+              Hot ${store.hotPct ?? "—"}% · Cold ${store.coldPct ?? "—"}% · Objects ${esc(
+                String(store.objects || "—")
+              )}
+            </p>
+          </div>
+          <div class="muted small" style="text-align:right">
+            Write ${esc(store.writeStatus || "—")} · Read ${esc(
+              store.readStatus || "—"
+            )}
+          </div>
+        </div>
+        <div class="it-bar" style="margin-top:10px"><i style="width:${usedPct}%"></i></div>
+        <p class="muted small" style="margin:6px 0 0">已用约 ${usedPct}%</p>
       </div>`;
   }
 

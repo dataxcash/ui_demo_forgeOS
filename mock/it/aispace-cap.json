@@ -1,52 +1,68 @@
 {
   "pageTitle": "aiSpace 后端",
-  "pageSub": "盯工作台模块背后的进程与对象库。不是业务跟单页，也不看文件正文。",
-  "servicesTitle": "后端组件",
+  "pageSub": "Runtime & Object Store",
+  "asOf": "2026-10-02 19:55",
+  "runtime": {
+    "requestsPerSec": 18,
+    "p95Ms": 42,
+    "errorRatePct": 0.2,
+    "queue": 0
+  },
   "services": [
     {
       "id": "aispace",
       "name": "aispace",
-      "kind": "进程",
-      "role": "业务工作台后端",
       "status": "正常",
-      "detail": "跟单/问答编排；经 graph.* 调 slimGraph，经检索链调 slimRAG"
+      "uptime": "3d 4h",
+      "cpuPct": 12,
+      "memGb": 1.8,
+      "deps": ["slimgraphd", "slimRAG"]
     },
     {
-      "id": "slimGraph",
+      "id": "slimgraphd",
       "name": "slimgraphd",
-      "kind": "进程",
-      "role": "主题谱系 / 关系图",
       "status": "正常",
-      "detail": "对象·关系·候选；UDS graph.*（/run/fos/slimgraph.sock）；仓 forgeMod/slimGraph"
+      "uptime": "3d 4h",
+      "cpuPct": 4,
+      "memGb": 0.6,
+      "deps": ["obj-gw"]
     },
     {
-      "id": "slimRAG",
+      "id": "slimrag",
       "name": "slimRAG",
-      "kind": "进程",
-      "role": "检索与切段入库",
       "status": "正常",
-      "detail": "文件→段→可检索；Web 上传与目录进料的下游；仓 forgeMod/slimRAG"
+      "uptime": "3d 4h",
+      "cpuPct": 9,
+      "memGb": 1.2,
+      "deps": ["obj-gw"]
     },
     {
       "id": "obj-gw",
       "name": "obj-gw",
-      "kind": "网关",
-      "role": "对象存储网关",
       "status": "正常",
-      "detail": "aispace / slimRAG / slimGraph 读写对象库的统一入口（挂在 storaged）"
+      "uptime": "3d 4h",
+      "cpuPct": 3,
+      "memGb": 0.4,
+      "deps": ["storaged"]
     }
   ],
-  "capacity": {
-    "title": "对象库用量",
-    "objectsTb": 4.6,
-    "objectsLimitTb": 8.0,
+  "depsGraph": {
+    "root": "aispace",
+    "edges": [
+      ["aispace", "slimgraphd"],
+      ["aispace", "slimRAG"],
+      ["slimgraphd", "obj-gw"],
+      ["slimRAG", "obj-gw"],
+      ["obj-gw", "storaged"]
+    ]
+  },
+  "objectStore": {
+    "usedTb": 4.6,
+    "limitTb": 8.0,
     "hotPct": 58,
     "coldPct": 22,
-    "note": "对象库配额与水位；正文内容不在本页。"
-  },
-  "watermarks": [
-    { "name": "热对象水位", "value": "58%", "level": "ok" },
-    { "name": "冷对象水位", "value": "22%", "level": "ok" },
-    { "name": "对象总数", "value": "128 万", "level": "ok" }
-  ]
+    "objects": "1.28M",
+    "writeStatus": "OK",
+    "readStatus": "OK"
+  }
 }
