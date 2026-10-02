@@ -1,5 +1,5 @@
-import { getTheme } from "../api-mock.js?v=nav49";
-import { esc } from "../esc.js?v=nav49";
+import { getTheme } from "../api-mock.js?v=nav50";
+import { esc } from "../esc.js?v=nav50";
 
 export const roles = ["employee", "manager", "boss"];
 export const active = "graph";

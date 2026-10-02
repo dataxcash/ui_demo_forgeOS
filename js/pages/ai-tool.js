@@ -3,8 +3,8 @@ import {
   getAiTools,
   runAiTool,
   getAiToolRuns,
-} from "../api-mock.js?v=nav49";
-import { esc } from "../esc.js?v=nav49";
+} from "../api-mock.js?v=nav50";
+import { esc } from "../esc.js?v=nav50";
 
 export const roles = ["employee", "manager", "boss", "hr", "it"];
 export const title = "ai工具";
@@ -320,7 +320,7 @@ function paintWork() {
 }
 
 async function switchTool(id, pushUrl) {
-  const { softNavigate } = await import("../soft-nav.js?v=nav49");
+  const { softNavigate } = await import("../soft-nav.js?v=nav50");
   await softNavigate(new URL(`./ai-tool.html?id=${id}`, location.href), { push: !!pushUrl });
 }
 

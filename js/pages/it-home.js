@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav49";
-import { confirmDialog } from "../confirm.js?v=nav49";
-import { esc } from "../esc.js?v=nav49";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav49";
+} from "../api-mock.js?v=nav50";
+import { confirmDialog } from "../confirm.js?v=nav50";
+import { esc } from "../esc.js?v=nav50";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav50";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav49");
+    const { softNavigate } = await import("../soft-nav.js?v=nav50");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -77,14 +77,14 @@ export async function activate({ account, url, root }) {
       "5m";
     if (!ranges.includes(range)) range = "5m";
 
-    function dualChart(a, b, opts = {}) {
+    function lineChart(seriesList, opts = {}) {
       const w = opts.w || 560;
-      const h = opts.h || 120;
+      const h = opts.h || 90;
       const pad = 4;
-      const series = [
-        { vals: (a || []).map(Number), cls: "it-chart-a" },
-        { vals: (b || []).map(Number), cls: "it-chart-b" },
-      ];
+      const series = (seriesList || []).map((s) => ({
+        vals: (s.vals || []).map(Number),
+        cls: s.cls || "it-chart-a",
+      }));
       const n = Math.max(...series.map((s) => s.vals.length), 1);
       const step = n > 1 ? (w - pad * 2) / (n - 1) : 0;
       const lines = series
@@ -147,9 +147,11 @@ export async function activate({ account, url, root }) {
                 ? alerts
                     .map(
                       (a) =>
-                        `<a class="it-alert-chip ${
+                        `<a class="it-alert-item ${
                           a.level === "danger" ? "danger" : "warn"
-                        }" href="${esc(a.href)}">${esc(a.text)}</a>`
+                        }" href="${esc(a.href)}"><i class="it-alert-dot" aria-hidden="true"></i><span>${esc(
+                          a.text
+                        )}</span></a>`
                     )
                     .join("")
                 : `<span class="muted small">暂无须处理</span>`
@@ -166,7 +168,10 @@ export async function activate({ account, url, root }) {
               <i class="it-leg-b"></i> VRAM %
             </span>
           </div>
-          ${dualChart(ser.gpuUtil, ser.gpuVram)}
+          ${lineChart([
+            { vals: ser.gpuUtil, cls: "it-chart-a" },
+            { vals: ser.gpuVram, cls: "it-chart-b" },
+          ])}
         </div>
 
         <h2 class="it-sec-title">INFERENCE</h2>
@@ -192,15 +197,21 @@ export async function activate({ account, url, root }) {
             <div class="muted small">Queue</div>
           </div>
         </div>
-        <div class="card it-chart-card">
-          <div class="it-chart-meta">
-            <span class="dash-k">TTFT / TOK/S</span>
-            <span class="it-chart-legend">
-              <i class="it-leg-a"></i> TTFT p50
-              <i class="it-leg-b"></i> TOK/S 整机
-            </span>
+        <div class="it-inf-charts">
+          <div class="card it-chart-card">
+            <div class="it-chart-meta">
+              <span class="dash-k">TTFT p50</span>
+              <span class="muted small">ms</span>
+            </div>
+            ${lineChart([{ vals: ser.ttftP50, cls: "it-chart-a" }])}
           </div>
-          ${dualChart(ser.ttftP50, ser.tokPerSec)}
+          <div class="card it-chart-card">
+            <div class="it-chart-meta">
+              <span class="dash-k">TOK/S</span>
+              <span class="muted small">整机</span>
+            </div>
+            ${lineChart([{ vals: ser.tokPerSec, cls: "it-chart-a" }])}
+          </div>
         </div>
 
         <h2 class="it-sec-title">MODELS</h2>

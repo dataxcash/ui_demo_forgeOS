@@ -3,9 +3,9 @@ import {
   patchImportRow,
   removeImportRow,
   confirmImport,
-} from "../api-mock.js?v=nav49";
-import { confirmDialog } from "../confirm.js?v=nav49";
-import { esc } from "../esc.js?v=nav49";
+} from "../api-mock.js?v=nav50";
+import { confirmDialog } from "../confirm.js?v=nav50";
+import { esc } from "../esc.js?v=nav50";
 
 export const roles = ["hr"];
 export const active = "hr-import";
