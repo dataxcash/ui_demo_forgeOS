@@ -247,6 +247,25 @@
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
 }
+.page-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.page-head .page-ico {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.page-head .page-ico svg {
+  display: block;
+}
 .page-head p {
   margin: 0;
   color: var(--text-secondary);

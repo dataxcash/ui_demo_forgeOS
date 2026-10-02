@@ -13,9 +13,9 @@ import {
   getSelectedIngestMachineId,
   registerIngestMachine,
   listSharedSources,
-} from "../api-mock.js?v=nav47";
-import { confirmDialog } from "../confirm.js?v=nav47";
-import { esc } from "../esc.js?v=nav47";
+} from "../api-mock.js?v=nav48";
+import { confirmDialog } from "../confirm.js?v=nav48";
+import { esc } from "../esc.js?v=nav48";
 
 export const roles = ["employee", "manager", "boss", "hr", "it"];
 export const title = "文档入库";
@@ -118,7 +118,7 @@ export async function activate({ account, url, root }) {
     if (mid && next !== "upload" && next !== "machines" && next !== "shared") {
       u.searchParams.set("machine", mid);
     }
-    const { softNavigate } = await import("../soft-nav.js?v=nav47");
+    const { softNavigate } = await import("../soft-nav.js?v=nav48");
     await softNavigate(u, { push: !!pushUrl });
   }
 
@@ -909,7 +909,7 @@ export async function activate({ account, url, root }) {
     u.searchParams.set("view", "upload");
     history.replaceState({}, "", u);
     url = u;
-    const { refreshShellChrome } = await import("../shell.js?v=nav47");
+    const { refreshShellChrome } = await import("../shell.js?v=nav48");
     await refreshShellChrome(account, VIEWS.upload.key);
   }
   if (!VIEWS[view]) view = "upload";

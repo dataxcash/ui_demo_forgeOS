@@ -6,12 +6,21 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav47";
-import { confirmDialog } from "../confirm.js?v=nav47";
-import { esc } from "../esc.js?v=nav47";
+} from "../api-mock.js?v=nav48";
+import { confirmDialog } from "../confirm.js?v=nav48";
+import { esc } from "../esc.js?v=nav48";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav48";
 
 export const roles = ["it"];
 export const title = "系统管理";
+
+function headHtml(navKey, title, sub) {
+  const ico = iconForNavKey(navKey);
+  return `<div class="page-head">
+    <h1>${pageTitleHtml(ico, esc(title))}</h1>
+    <p>${esc(sub)}</p>
+  </div>`;
+}
 
 function resolveView(url) {
   const file = url.pathname.split("/").pop() || "";
@@ -38,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav47");
+    const { softNavigate } = await import("../soft-nav.js?v=nav48");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -66,10 +75,11 @@ export async function activate({ account, url, root }) {
 
     root.innerHTML = `
       <div class="flash" id="flash"></div>
-      <div class="page-head">
-        <h1>总览</h1>
-        <p>整机能力与当前总判。只看资源与设施，不看业务内容。</p>
-      </div>
+      ${headHtml(
+        "it-dashboard",
+        "总览",
+        "整机能力与当前总判。只看资源与设施，不看业务内容。"
+      )}
       <div class="it-overall card">
         <div class="it-overall-main">
           <span class="pill ${overallClass(d.overall)}">${esc(d.overall)}</span>
@@ -124,10 +134,7 @@ export async function activate({ account, url, root }) {
     const s = await getItServices();
     root.innerHTML = `
       <div class="flash" id="flash"></div>
-      <div class="page-head">
-        <h1>服务层次</h1>
-        <p>${esc(s.note)}</p>
-      </div>
+      ${headHtml("it-services", "服务层次", s.note || "")}
       <div class="it-gate card">
         <span class="dash-k">就绪门</span>
         <span class="pill ${overallClass(s.readyGate === "已放行" ? "正常" : "未就绪")}">${esc(
@@ -293,10 +300,11 @@ export async function activate({ account, url, root }) {
     function render() {
       const m = models.find((x) => x.id === selected) || models[0];
       root.innerHTML = `
-        <div class="page-head">
-          <h1>算力与 GPU</h1>
-          <p>${esc(c.note || "")} 截至 ${esc(c.asOf || "")}。</p>
-        </div>
+        ${headHtml(
+          "it-compute",
+          "算力与 GPU",
+          `${c.note || ""} 截至 ${c.asOf || ""}。`
+        )}
 
         <div class="grid-2">
           <div class="card">
@@ -484,10 +492,7 @@ export async function activate({ account, url, root }) {
       (a.capacity.objectsTb / a.capacity.objectsLimitTb) * 100
     );
     root.innerHTML = `
-      <div class="page-head">
-        <h1>${esc(title)}</h1>
-        <p>${esc(a.pageSub || a.capacity.note || "")}</p>
-      </div>
+      ${headHtml("it-aispace", title, a.pageSub || a.capacity.note || "")}
       <h2 class="it-sec-title">${esc(a.servicesTitle || "后端组件")}</h2>
       <div class="grid-2">
         ${a.services
@@ -578,10 +583,11 @@ export async function activate({ account, url, root }) {
       "";
 
     root.innerHTML = `
-      <div class="page-head">
-        <h1>远程机器</h1>
-        <p>${esc(pack.note || "")} 截至 ${esc(pack.asOf || "")}。</p>
-      </div>
+      ${headHtml(
+        "it-remote",
+        "远程机器",
+        `${pack.note || ""} 截至 ${pack.asOf || ""}。`
+      )}
 
       <h2 class="it-sec-title">交换机层级（envPD 探测）</h2>
       <div class="it-sw-tree" id="sw-tree"></div>
@@ -890,10 +896,11 @@ export async function activate({ account, url, root }) {
     document.title = "存储与码头 · 系统管理";
     const s = await getItStorage();
     root.innerHTML = `
-      <div class="page-head">
-        <h1>存储与码头</h1>
-        <p>按用途看分层健康与容量。外挂盘用于模型进料或数据导出。</p>
-      </div>
+      ${headHtml(
+        "it-storage",
+        "存储与码头",
+        "按用途看分层健康与容量。外挂盘用于模型进料或数据导出。"
+      )}
       <div class="it-metrics">
         ${s.layers
           .map((l) => {

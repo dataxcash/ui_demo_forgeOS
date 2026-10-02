@@ -1,5 +1,5 @@
-import { getIt } from "../api-mock.js?v=nav47";
-import { esc } from "../esc.js?v=nav47";
+import { getIt } from "../api-mock.js?v=nav48";
+import { esc } from "../esc.js?v=nav48";
 
 export const roles = ["it"];
 export const active = "it-job";

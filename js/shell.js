@@ -1,14 +1,19 @@
-import { esc } from "./esc.js?v=nav47";
-import { loadI18n, t } from "./i18n.js?v=nav47";
+import { esc } from "./esc.js?v=nav48";
+import { loadI18n, t } from "./i18n.js?v=nav48";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav47";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav47";
-import { confirmDialog } from "./confirm.js?v=nav47";
+} from "./session.js?v=nav48";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav48";
+import { confirmDialog } from "./confirm.js?v=nav48";
+import {
+  iconForApp,
+  iconForNavKey,
+  navIconLabel,
+} from "./icons.js?v=nav48";
 
 const STATUS_MUTE_APPS = new Set(["aitools", "ingest"]);
 
@@ -35,7 +40,7 @@ export async function ensureShell(account, active) {
 /** @deprecated 兼容旧页；请用 ensureShell + startPage */
 export async function mountShell({ account, active }) {
   await ensureShell(account, active);
-  const { installSoftNav } = await import("./soft-nav.js?v=nav47");
+  const { installSoftNav } = await import("./soft-nav.js?v=nav48");
   installSoftNav();
 }
 
@@ -60,8 +65,10 @@ export async function refreshShellChrome(account, active) {
       .map((g) => {
         const home = g.items[0]?.href || "#";
         const on = currentApp && g.id === currentApp.id;
-        return `<a href="${home}" class="main-menu-item${on ? " active" : ""}">${esc(
-          t(g.appKey)
+        const ico = iconForApp(g.id);
+        return `<a href="${home}" class="main-menu-item${on ? " active" : ""}">${navIconLabel(
+          ico,
+          esc(t(g.appKey))
         )}</a>`;
       })
       .join("");
@@ -73,7 +80,8 @@ export async function refreshShellChrome(account, active) {
     const sameApp = prevApp && prevApp === (currentApp?.id || "");
     const sameLen =
       sameApp && nav.querySelectorAll("a[data-nav-key]").length === items.length;
-    if (sameLen && items.length) {
+    const hasIcons = !!nav.querySelector(".nav-ico");
+    if (sameLen && items.length && hasIcons) {
       nav.querySelectorAll("a[data-nav-key]").forEach((a) => {
         a.classList.toggle("active", a.getAttribute("data-nav-key") === active);
       });
@@ -81,12 +89,12 @@ export async function refreshShellChrome(account, active) {
       nav.innerHTML = `<div class="muted small" style="padding:14px">暂无子页</div>`;
     } else {
       nav.innerHTML = items
-        .map(
-          (n) =>
-            `<a href="${n.href}" data-nav-key="${esc(n.key)}" class="${
-              n.key === active ? "active" : ""
-            }">${esc(t(n.labelKey))}</a>`
-        )
+        .map((n) => {
+          const ico = iconForNavKey(n.key) || iconForNavKey(n.iconKey);
+          return `<a href="${n.href}" data-nav-key="${esc(n.key)}" class="${
+            n.key === active ? "active" : ""
+          }">${navIconLabel(ico, esc(t(n.labelKey)))}</a>`;
+        })
         .join("");
     }
   }
@@ -218,7 +226,7 @@ function wireShellChrome(account, active) {
       if (!acc || acc.stub) return;
       setAccountId(id);
       menu.classList.remove("show");
-      const { softNavigate } = await import("./soft-nav.js?v=nav47");
+      const { softNavigate } = await import("./soft-nav.js?v=nav48");
       shellAccount = acc;
       await softNavigate(new URL(homeFor(acc), location.href), { push: true });
     });
@@ -273,7 +281,7 @@ function wireShellChrome(account, active) {
           if (typeof window.__hrPrefillNormal === "function") {
             window.__hrPrefillNormal();
           } else {
-            const { softNavigate } = await import("./soft-nav.js?v=nav47");
+            const { softNavigate } = await import("./soft-nav.js?v=nav48");
             await softNavigate(new URL("./hr-import.html", location.href), {
               push: true,
             });
