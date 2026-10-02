@@ -2,9 +2,9 @@ import {
   getCandidates,
   confirmCandidates,
   rejectCandidates,
-} from "../api-mock.js?v=nav53";
-import { confirmDialog } from "../confirm.js?v=nav53";
-import { esc } from "../esc.js?v=nav53";
+} from "../api-mock.js?v=nav54";
+import { confirmDialog } from "../confirm.js?v=nav54";
+import { esc } from "../esc.js?v=nav54";
 
 export const roles = ["employee", "manager"];
 export const active = "graph";

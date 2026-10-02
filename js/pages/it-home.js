@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav53";
-import { confirmDialog } from "../confirm.js?v=nav53";
-import { esc } from "../esc.js?v=nav53";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav53";
+} from "../api-mock.js?v=nav54";
+import { confirmDialog } from "../confirm.js?v=nav54";
+import { esc } from "../esc.js?v=nav54";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav54";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav53");
+    const { softNavigate } = await import("../soft-nav.js?v=nav54");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -840,34 +840,37 @@ export async function activate({ account, url, root }) {
     const hosts = pack.hosts || [];
     const swMap = Object.fromEntries(switches.map((s) => [s.id, s]));
 
-    function switchPath(swId) {
-      const parts = [];
-      let cur = swMap[swId];
-      let guard = 0;
-      while (cur && guard++ < 8) {
-        parts.unshift(cur.name.replace(/ · .*$/, "").replace(/交换机 · /, ""));
-        cur = cur.parentId ? swMap[cur.parentId] : null;
+    function hostStatusClass(st) {
+      if (st === "在线") return "ok";
+      if (st === "掉线" || st === "未部署") return "danger";
+      return "warn";
+    }
+
+    function probeHealth(h) {
+      const probes = h.probes || [];
+      if (!probes.length) {
+        return { text: h.status === "未部署" ? "未部署" : "无探针", cls: "warn" };
       }
-      return parts.join(" → ");
+      if (probes.some((p) => p.status === "掉线"))
+        return { text: "探针掉线", cls: "danger" };
+      if (probes.some((p) => p.status === "延迟"))
+        return { text: "探针延迟", cls: "warn" };
+      return { text: "探针正常", cls: "ok" };
     }
 
-    function hostProbeNames(h) {
-      return [
-        ...(h.probes || []).map((p) => p.name),
-        ...(h.services || []).map((s) => s.name),
-      ];
+    function probeNames(h) {
+      return (h.probes || []).map((p) => p.name);
     }
 
-    const osFamilies = [
-      ...new Set(hosts.map((h) => h.osFamily).filter(Boolean)),
-    ];
     const probeKinds = [
-      ...new Set(
-        hosts.flatMap((h) =>
-          [...(h.probes || []), ...(h.services || [])].map((p) => p.name)
-        )
-      ),
+      ...new Set(hosts.flatMap((h) => probeNames(h))),
     ].sort();
+
+    const nOnline = hosts.filter((h) => h.status === "在线").length;
+    const nDelay = hosts.filter((h) => h.status === "延迟").length;
+    const nDown = hosts.filter((h) => h.status === "掉线").length;
+    const nUndeploy = hosts.filter((h) => h.status === "未部署").length;
+    const badSw = switches.filter((s) => s.status !== "正常");
 
     let selectedId =
       new URL(location.href).searchParams.get("host") ||
@@ -879,126 +882,93 @@ export async function activate({ account, url, root }) {
       ${headHtml(
         "it-remote",
         "远程机器",
-        `${pack.note || ""} 截至 ${pack.asOf || ""}。`
+        `Edge Fleet & Probes · 截至 ${pack.asOf || ""}`
       )}
 
-      <h2 class="it-sec-title">交换机层级（envPD 探测）</h2>
-      <div class="it-sw-tree" id="sw-tree"></div>
-
-      <div class="it-filter card">
-        <div class="it-filter-row">
-          <label>主机状态
-            <select id="f-status">
-              <option value="all">全部</option>
-              <option value="在线">在线</option>
-              <option value="延迟">延迟</option>
-              <option value="掉线">掉线</option>
-              <option value="未部署">未部署</option>
-            </select>
-          </label>
-          <label>操作系统
-            <select id="f-os">
-              <option value="all">全部</option>
-              ${osFamilies
-                .map((o) => `<option value="${esc(o)}">${esc(o)}</option>`)
-                .join("")}
-            </select>
-          </label>
-          <label>所属交换机
-            <select id="f-sw">
-              <option value="all">全部</option>
-              ${switches
-                .map(
-                  (s) =>
-                    `<option value="${esc(s.id)}">${esc(s.name)}</option>`
-                )
-                .join("")}
-            </select>
-          </label>
-          <label>探针/服务
-            <select id="f-probe">
-              <option value="all">全部</option>
-              ${probeKinds
-                .map((p) => `<option value="${esc(p)}">${esc(p)}</option>`)
-                .join("")}
-            </select>
-          </label>
-          <label class="it-filter-q">关键字
-            <input id="f-q" type="search" placeholder="主机 / IP / 负责人 / 部门 / OS / 端口" value="${esc(
-              initialQ
-            )}" />
-          </label>
+      <div class="it-res-row it-svc-summary">
+        <div class="it-res-strip">
+          <div class="it-res"><span class="dash-k">机队</span><strong>${hosts.length}</strong></div>
+          <div class="it-res"><span class="dash-k">在线</span><strong>${nOnline}</strong></div>
+          <div class="it-res"><span class="dash-k">延迟</span><strong>${nDelay}</strong></div>
+          <div class="it-res"><span class="dash-k">掉线</span><strong>${nDown}</strong></div>
+          <div class="it-res"><span class="dash-k">未部署</span><strong>${nUndeploy}</strong></div>
         </div>
-        <p class="muted small" id="f-count" style="margin:8px 0 0"></p>
+        <div class="it-alert-strip">
+          ${
+            badSw.length
+              ? badSw
+                  .map(
+                    (s) =>
+                      `<span class="it-alert-item warn"><i class="it-alert-dot" aria-hidden="true"></i><span>${esc(
+                        s.name
+                      )} · ${esc(s.note || s.status)}</span></span>`
+                  )
+                  .join("")
+              : `<span class="muted small">接入网正常</span>`
+          }
+        </div>
       </div>
 
-      <div class="it-remote-layout">
-        <div class="it-remote-list" id="host-list"></div>
-        <div class="it-remote-detail" id="host-detail"></div>
+      <div class="it-filter-row" style="margin:10px 0 8px">
+        <label>状态
+          <select id="f-status">
+            <option value="all">全部</option>
+            <option value="在线">在线</option>
+            <option value="延迟">延迟</option>
+            <option value="掉线">掉线</option>
+            <option value="未部署">未部署</option>
+          </select>
+        </label>
+        <label>探针
+          <select id="f-probe">
+            <option value="all">全部</option>
+            ${probeKinds
+              .map((p) => `<option value="${esc(p)}">${esc(p)}</option>`)
+              .join("")}
+          </select>
+        </label>
+        <label class="it-filter-q">关键字
+          <input id="f-q" type="search" placeholder="主机 / IP / 负责人 / 探针" value="${esc(
+            initialQ
+          )}" />
+        </label>
+      </div>
+      <p class="muted small" id="f-count" style="margin:0 0 8px"></p>
+
+      <div class="it-fleet-layout">
+        <div class="it-fleet-table-wrap">
+          <table class="table it-fleet-table">
+            <thead>
+              <tr>
+                <th>主机</th>
+                <th>状态</th>
+                <th>探针</th>
+                <th>最近见到</th>
+                <th>负责人</th>
+              </tr>
+            </thead>
+            <tbody id="host-list"></tbody>
+          </table>
+        </div>
+        <div class="it-fleet-detail" id="host-detail"></div>
       </div>`;
-
-    const swTree = root.querySelector("#sw-tree");
-    const roots = switches.filter((s) => !s.parentId);
-
-    function renderSwitchNode(sw, depth) {
-      const kids = switches.filter((s) => s.parentId === sw.id);
-      const under = hosts.filter((h) => h.switchId === sw.id);
-      const bad = under.filter((h) => h.status !== "在线").length;
-      return `<div class="it-sw-node" style="margin-left:${depth * 16}px">
-        <button type="button" class="it-sw-card" data-sw="${esc(sw.id)}">
-          <div class="it-svc-row">
-            <div>
-              <span class="pill ${sw.role === "核心" ? "ok" : ""}">${esc(
-                sw.role
-              )}</span>
-              <strong style="margin-left:6px">${esc(sw.name)}</strong>
-              <div class="muted small" style="margin-top:4px">
-                ${esc(sw.mgmtIp)} · 端口 ${sw.portsUp}/${sw.portsTotal}
-                · 下属主机 ${under.length}${bad ? ` · 异常 ${bad}` : ""}
-                ${sw.note ? ` · ${esc(sw.note)}` : ""}
-              </div>
-            </div>
-            <span class="pill ${
-              sw.status === "正常" ? "ok" : "warn"
-            }">${esc(sw.status)}</span>
-          </div>
-        </button>
-        ${kids.map((k) => renderSwitchNode(k, depth + 1)).join("")}
-      </div>`;
-    }
-
-    swTree.innerHTML = roots.map((r) => renderSwitchNode(r, 0)).join("");
 
     const fStatus = root.querySelector("#f-status");
-    const fOs = root.querySelector("#f-os");
-    const fSw = root.querySelector("#f-sw");
     const fProbe = root.querySelector("#f-probe");
     const fQ = root.querySelector("#f-q");
     const fCount = root.querySelector("#f-count");
     const hostList = root.querySelector("#host-list");
     const hostDetail = root.querySelector("#host-detail");
 
-    swTree.onclick = (e) => {
-      const btn = e.target.closest("[data-sw]");
-      if (!btn) return;
-      fSw.value = btn.getAttribute("data-sw");
-      apply();
-    };
-
     function filtered() {
       const st = fStatus.value;
-      const os = fOs.value;
-      const sw = fSw.value;
       const probe = fProbe.value;
       const q = (fQ.value || "").trim().toLowerCase();
       return hosts.filter((h) => {
         if (st !== "all" && h.status !== st) return false;
-        if (os !== "all" && h.osFamily !== os) return false;
-        if (sw !== "all" && h.switchId !== sw) return false;
-        if (probe !== "all" && !hostProbeNames(h).includes(probe)) return false;
+        if (probe !== "all" && !probeNames(h).includes(probe)) return false;
         if (q) {
-          const swName = swMap[h.switchId]?.name || "";
-          const blob = `${h.host} ${h.ip} ${h.mac || ""} ${h.owner} ${h.dept || ""} ${h.os} ${h.switchPort || ""} ${swName} ${h.note || ""} ${hostProbeNames(h).join(" ")}`.toLowerCase();
+          const blob = `${h.host} ${h.ip} ${h.owner} ${h.dept || ""} ${h.note || ""} ${probeNames(h).join(" ")}`.toLowerCase();
           if (!blob.includes(q)) return false;
         }
         return true;
@@ -1007,169 +977,101 @@ export async function activate({ account, url, root }) {
 
     function renderDetail(h) {
       if (!h) {
-        hostDetail.innerHTML = `<div class="empty">选择左侧一台机器查看详情。</div>`;
+        hostDetail.innerHTML = `<div class="empty">选择一台机器查看探针。</div>`;
         return;
       }
-      const sw = swMap[h.switchId];
-      const comps = [...(h.probes || []), ...(h.services || [])];
+      const ph = probeHealth(h);
+      const probes = h.probes || [];
       hostDetail.innerHTML = `
-        <div class="card">
-          <div class="it-svc-row">
-            <div>
-              <strong style="font-size:16px">${esc(h.host)}</strong>
-              <div class="muted small" style="margin-top:4px">${esc(h.ip)} · ${esc(
-                h.mac || "—"
-              )}</div>
+        <div class="it-fleet-detail-head">
+          <div>
+            <strong style="font-size:16px">${esc(h.host)}</strong>
+            <div class="muted small" style="margin-top:4px">${esc(h.ip)}
+              · ${esc(h.owner)}${h.dept ? ` · ${esc(h.dept)}` : ""}</div>
+          </div>
+          <span class="pill ${hostStatusClass(h.status)}">${esc(h.status)}</span>
+        </div>
+        <div class="it-kpi-row" style="margin-top:12px; border-bottom:0; padding-bottom:0">
+          <div class="it-kpi">
+            <div class="dash-k">探针健康</div>
+            <div class="it-metric-v" style="font-size:15px">
+              <span class="pill ${ph.cls}">${esc(ph.text)}</span>
             </div>
-            <span class="pill ${statusPill(
-              h.status === "在线"
-                ? "运行中"
-                : h.status === "掉线" || h.status === "未部署"
-                  ? "失败"
-                  : "排队"
-            )}">${esc(h.status)}</span>
           </div>
-          <div class="it-gpu-grid" style="margin-top:12px">
-            <div><span class="dash-k">操作系统</span><div class="it-metric-v" style="font-size:14px">${esc(
-              h.os
-            )}</div><div class="muted small">${esc(h.osFamily)} · ${esc(
-              h.arch || "—"
-            )}</div></div>
-            <div><span class="dash-k">负责人</span><div class="it-metric-v" style="font-size:14px">${esc(
-              h.owner
-            )}</div><div class="muted small">${esc(h.dept || "—")}</div></div>
-            <div><span class="dash-k">最近见到</span><div class="it-metric-v" style="font-size:14px">${esc(
-              h.lastSeen
-            )}</div></div>
-            <div><span class="dash-k">备注</span><div class="muted small" style="margin-top:4px">${esc(
-              h.note || "—"
-            )}</div></div>
+          <div class="it-kpi">
+            <div class="dash-k">最近见到</div>
+            <div class="it-metric-v" style="font-size:15px">${esc(h.lastSeen || "—")}</div>
           </div>
-          <h3 class="it-sec-title">隶属交换机</h3>
-          <p style="margin:0">
-            <strong>${esc(sw?.name || h.switchId)}</strong>
-            <span class="muted small"> · 端口 ${esc(h.switchPort || "—")}</span>
-          </p>
-          <p class="muted small" style="margin:4px 0 0">层级：${esc(
-            switchPath(h.switchId) || "—"
-          )}</p>
-          <h3 class="it-sec-title">探针（可多枚）</h3>
-          ${
-            (h.probes || []).length
-              ? `<table class="table"><thead><tr><th>名称</th><th>类型</th><th>版本</th><th>状态</th></tr></thead><tbody>
-              ${h.probes
-                .map(
-                  (p) => `<tr>
-                  <td>${esc(p.name)}</td>
-                  <td>${esc(p.kind || "—")}</td>
-                  <td>${esc(p.version)}</td>
-                  <td><span class="pill ${statusPill(
-                    p.status === "在线"
-                      ? "运行中"
-                      : p.status === "掉线"
-                        ? "失败"
-                        : "排队"
-                  )}">${esc(p.status)}</span></td>
-                </tr>`
-                )
-                .join("")}
-            </tbody></table>`
-              : `<p class="muted small">本机暂无探针（可能仅跑服务，或尚未部署）。</p>`
-          }
-          <h3 class="it-sec-title">其它服务</h3>
-          ${
-            (h.services || []).length
-              ? `<table class="table"><thead><tr><th>名称</th><th>类型</th><th>版本</th><th>状态</th></tr></thead><tbody>
-              ${h.services
-                .map(
-                  (p) => `<tr>
-                  <td>${esc(p.name)}</td>
-                  <td>${esc(p.kind || "—")}</td>
-                  <td>${esc(p.version)}</td>
-                  <td><span class="pill ${statusPill(
-                    p.status === "在线"
-                      ? "运行中"
-                      : p.status === "掉线"
-                        ? "失败"
-                        : "排队"
-                  )}">${esc(p.status)}</span></td>
-                </tr>`
-                )
-                .join("")}
-            </tbody></table>`
-              : `<p class="muted small">无额外服务登记。</p>`
-          }
-          <p class="muted small" style="margin-top:10px">组件合计 ${comps.length} 项。</p>
-        </div>`;
+          <div class="it-kpi">
+            <div class="dash-k">备注</div>
+            <div class="muted small" style="margin-top:6px">${esc(h.note || "—")}</div>
+          </div>
+        </div>
+
+        <h3 class="it-sec-title">探针</h3>
+        ${
+          probes.length
+            ? `<table class="table"><thead><tr><th>名称</th><th>类型</th><th>版本</th><th>状态</th></tr></thead><tbody>
+            ${probes
+              .map(
+                (p) => `<tr>
+                <td><strong>${esc(p.name)}</strong></td>
+                <td class="small">${esc(p.kind || "—")}</td>
+                <td class="small">${esc(p.version || "—")}</td>
+                <td><span class="pill ${hostStatusClass(p.status)}">${esc(
+                  p.status
+                )}</span></td>
+              </tr>`
+              )
+              .join("")}
+          </tbody></table>`
+            : `<p class="muted small">本机暂无进料/邮件探针${
+                h.status === "未部署" ? "（尚未部署）" : ""
+              }。</p>`
+        }
+        <p class="muted small" style="margin-top:12px">接入：${esc(
+          swMap[h.switchId]?.name || "—"
+        )}</p>`;
     }
 
     function apply() {
       const rows = filtered();
-      fCount.textContent = `共 ${rows.length} 台主机（全部 ${hosts.length}）· 交换机 ${switches.length} 台`;
+      fCount.textContent = `显示 ${rows.length} / ${hosts.length} 台`;
       if (selectedId && !rows.find((h) => h.id === selectedId)) {
         selectedId = rows[0]?.id || "";
       }
       hostList.innerHTML = rows.length
         ? rows
             .map((h) => {
-              const probes = h.probes || [];
+              const ph = probeHealth(h);
               const active = h.id === selectedId ? " active" : "";
-              return `<button type="button" class="it-host-row${active}" data-host="${esc(
-                h.id
-              )}">
-                <div class="it-host-top">
+              return `<tr class="it-fleet-row${active}" data-host="${esc(h.id)}" tabindex="0">
+                <td>
                   <strong>${esc(h.host)}</strong>
-                  <span class="pill ${statusPill(
-                    h.status === "在线"
-                      ? "运行中"
-                      : h.status === "掉线" || h.status === "未部署"
-                        ? "失败"
-                        : "排队"
-                  )}">${esc(h.status)}</span>
-                </div>
-                <div class="muted small">${esc(h.os)} · ${esc(h.ip)} · ${esc(
-                  h.owner
-                )}</div>
-                <div class="muted small">交换机：${esc(
-                  switchPath(h.switchId) || "—"
-                )} · ${esc(h.switchPort || "—")}</div>
-                <div class="it-probe-pills">
-                  ${
-                    probes.length
-                      ? probes
-                          .map(
-                            (p) =>
-                              `<span class="pill ${
-                                p.status === "在线"
-                                  ? "ok"
-                                  : p.status === "掉线"
-                                    ? "danger"
-                                    : "warn"
-                              }">${esc(p.name)}</span>`
-                          )
-                          .join("")
-                      : `<span class="muted small">无探针</span>`
-                  }
-                  ${(h.services || [])
-                    .slice(0, 3)
-                    .map(
-                      (s) =>
-                        `<span class="pill">${esc(s.name)}</span>`
-                    )
-                    .join("")}
-                </div>
-              </button>`;
+                  <div class="muted small">${esc(h.ip)}</div>
+                </td>
+                <td><span class="pill ${hostStatusClass(h.status)}">${esc(
+                  h.status
+                )}</span></td>
+                <td><span class="pill ${ph.cls}">${esc(ph.text)}</span>
+                  <div class="muted small">${esc(
+                    probeNames(h).join(" · ") || "—"
+                  )}</div>
+                </td>
+                <td class="small">${esc(h.lastSeen || "—")}</td>
+                <td class="small">${esc(h.owner)}</td>
+              </tr>`;
             })
             .join("")
-        : `<div class="empty">没有符合条件的机器。</div>`;
+        : `<tr><td colspan="5" class="muted">没有符合条件的机器。</td></tr>`;
 
       renderDetail(rows.find((h) => h.id === selectedId) || rows[0]);
     }
 
     hostList.onclick = (e) => {
-      const btn = e.target.closest("[data-host]");
-      if (!btn) return;
-      selectedId = btn.getAttribute("data-host");
+      const row = e.target.closest("[data-host]");
+      if (!row) return;
+      selectedId = row.getAttribute("data-host");
       const u = new URL(location.href);
       u.searchParams.set("view", "remote");
       u.searchParams.set("host", selectedId);
@@ -1178,8 +1080,6 @@ export async function activate({ account, url, root }) {
     };
 
     fStatus.onchange = apply;
-    fOs.onchange = apply;
-    fSw.onchange = apply;
     fProbe.onchange = apply;
     fQ.oninput = apply;
     apply();

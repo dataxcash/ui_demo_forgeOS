@@ -1371,52 +1371,51 @@ a.tool-card:hover {
 .it-sw-card:hover {
   border-color: var(--accent);
 }
-.it-remote-layout {
+.it-fleet-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr);
-  gap: 12px;
-  margin-top: 10px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+  gap: 16px;
   align-items: start;
+  isolation: isolate;
 }
 @media (max-width: 960px) {
-  .it-remote-layout {
+  .it-fleet-layout {
     grid-template-columns: 1fr;
   }
 }
-.it-remote-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 70vh;
-  overflow: auto;
-}
-.it-host-row {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
+.it-fleet-table-wrap {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
+  overflow: auto;
+  max-height: 70vh;
 }
-.it-host-row:hover,
-.it-host-row.active {
-  border-color: var(--accent);
+.it-fleet-table {
+  margin: 0;
+}
+.it-fleet-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.it-fleet-row {
+  cursor: pointer;
+}
+.it-fleet-row:hover td,
+.it-fleet-row.active td {
   background: var(--accent-soft, #eef4f1);
 }
-.it-host-top {
+.it-fleet-detail {
+  min-width: 0;
+  padding: 4px 2px 8px;
+}
+.it-fleet-detail-head {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 2px;
-}
-.it-probe-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
 }
