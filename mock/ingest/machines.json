@@ -1,0 +1,226 @@
+{
+  "machines": [
+    {
+      "id": "M-lina-desk",
+      "ownerAccount": "li.na",
+      "ownerName": "李娜",
+      "host": "李娜-台式机",
+      "osType": "Windows",
+      "osDetail": "Windows 11",
+      "phase": "ready",
+      "bootstrap": {
+        "installed": true,
+        "version": "fos-sshd 0.1.0",
+        "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+        "port": 2222,
+        "lastSeen": "2026-10-02 15:10"
+      },
+      "adminAuth": { "done": true, "note": "管理员账密仅本次使用，不落库" },
+      "syncAccount": {
+        "created": true,
+        "username": "fos-ingest",
+        "userVisible": false
+      },
+      "probe": {
+        "slimSync": "在线",
+        "version": "0.9.2-win",
+        "lastHeartbeat": "2026-10-02 16:55"
+      },
+      "dirs": [
+        {
+          "id": "d1",
+          "path": "D:\\项目资料",
+          "files": 12840,
+          "bytes": "42.6 GB",
+          "status": "监视中"
+        }
+      ],
+      "stats": { "todayUploaded": "128 MB", "todayFiles": 86 }
+    },
+    {
+      "id": "M-lina-lap",
+      "ownerAccount": "li.na",
+      "ownerName": "李娜",
+      "host": "李娜-笔记本",
+      "osType": "Windows",
+      "osDetail": "Windows 11",
+      "phase": "need_bootstrap",
+      "bootstrap": {
+        "installed": false,
+        "version": "fos-sshd 0.1.0",
+        "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+        "port": 2222,
+        "lastSeen": null
+      },
+      "adminAuth": { "done": false, "note": "管理员账密仅本次使用，不落库" },
+      "syncAccount": {
+        "created": false,
+        "username": "fos-ingest",
+        "userVisible": false
+      },
+      "probe": {
+        "slimSync": "未安装",
+        "version": null,
+        "lastHeartbeat": null
+      },
+      "dirs": [],
+      "stats": { "todayUploaded": "—", "todayFiles": 0 }
+    },
+    {
+      "id": "M-wu-work",
+      "ownerAccount": "wu.it",
+      "ownerName": "吴工",
+      "host": "IT-工作站",
+      "osType": "Windows",
+      "osDetail": "Windows 11",
+      "phase": "ready",
+      "bootstrap": {
+        "installed": true,
+        "version": "fos-sshd 0.1.0",
+        "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+        "port": 2222,
+        "lastSeen": "2026-10-02 16:40"
+      },
+      "adminAuth": { "done": true, "note": "管理员账密仅本次使用，不落库" },
+      "syncAccount": {
+        "created": true,
+        "username": "fos-ingest",
+        "userVisible": false
+      },
+      "probe": {
+        "slimSync": "在线",
+        "version": "0.9.2-win",
+        "lastHeartbeat": "2026-10-02 16:58"
+      },
+      "dirs": [
+        {
+          "id": "d-wu-1",
+          "path": "D:\\运维脚本",
+          "files": 420,
+          "bytes": "1.2 GB",
+          "status": "监视中"
+        }
+      ],
+      "stats": { "todayUploaded": "12 MB", "todayFiles": 9 }
+    },
+    {
+      "id": "M-zhao-lap",
+      "ownerAccount": "zhao.qiang",
+      "ownerName": "赵强",
+      "host": "赵强-笔记本",
+      "osType": "Windows",
+      "osDetail": "Windows 10",
+      "phase": "ready",
+      "bootstrap": {
+        "installed": true,
+        "version": "fos-sshd 0.1.0",
+        "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+        "port": 2222,
+        "lastSeen": "2026-10-02 12:18"
+      },
+      "adminAuth": { "done": true, "note": "管理员账密仅本次使用，不落库" },
+      "syncAccount": {
+        "created": true,
+        "username": "fos-ingest",
+        "userVisible": false
+      },
+      "probe": {
+        "slimSync": "延迟",
+        "version": "0.9.1-win",
+        "lastHeartbeat": "2026-10-02 12:18"
+      },
+      "dirs": [
+        {
+          "id": "d-zq-1",
+          "path": "C:\\Users\\zhao\\Documents\\合同",
+          "files": 860,
+          "bytes": "3.4 GB",
+          "status": "监视中"
+        }
+      ],
+      "stats": { "todayUploaded": "4 MB", "todayFiles": 3 }
+    },
+    {
+      "id": "M-sun-desk",
+      "ownerAccount": "sun.yue",
+      "ownerName": "孙悦",
+      "host": "孙悦-工作机",
+      "osType": "Windows",
+      "osDetail": "Windows 11",
+      "phase": "ready",
+      "bootstrap": {
+        "installed": true,
+        "version": "fos-sshd 0.1.0",
+        "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+        "port": 2222,
+        "lastSeen": "2026-09-28 19:40"
+      },
+      "adminAuth": { "done": true, "note": "管理员账密仅本次使用，不落库" },
+      "syncAccount": {
+        "created": true,
+        "username": "fos-ingest",
+        "userVisible": false
+      },
+      "probe": {
+        "slimSync": "未知",
+        "version": "—",
+        "lastHeartbeat": "2026-09-28 19:40"
+      },
+      "sshd": "离线",
+      "dirs": [],
+      "stats": { "todayUploaded": "—", "todayFiles": 0 }
+    }
+  ],
+  "sharedSources": [
+    {
+      "id": "NAS-01",
+      "name": "公司文件服务器",
+      "type": "NAS",
+      "protocol": "SMB",
+      "endpoint": "\\\\files.local\\share",
+      "status": "监视中",
+      "health": "正常",
+      "lastSeen": "2026-10-02 16:40",
+      "paths": [
+        {
+          "id": "sp1",
+          "path": "\\\\files.local\\share\\销售资料",
+          "files": 5200,
+          "bytes": "18.2 GB",
+          "status": "监视中"
+        },
+        {
+          "id": "sp2",
+          "path": "\\\\files.local\\share\\制度公文",
+          "files": 1180,
+          "bytes": "2.1 GB",
+          "status": "监视中"
+        }
+      ]
+    },
+    {
+      "id": "NAS-02",
+      "name": "研发归档盘",
+      "type": "NAS",
+      "protocol": "NFS",
+      "endpoint": "nfs://nas-rd.local/archive",
+      "status": "监视中",
+      "health": "延迟",
+      "lastSeen": "2026-10-02 15:02",
+      "paths": [
+        {
+          "id": "sp3",
+          "path": "/archive/releases",
+          "files": 940,
+          "bytes": "86 GB",
+          "status": "监视中"
+        }
+      ]
+    }
+  ],
+  "bootstrapTemplate": {
+    "version": "fos-sshd 0.1.0",
+    "downloadName": "ForgeOS-Guide-SSHD-Setup.exe",
+    "port": 2222
+  }
+}

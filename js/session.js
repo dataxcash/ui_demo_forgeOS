@@ -54,6 +54,11 @@ function ingestApp(account) {
       key: "ingest-upload",
     },
     {
+      href: "./ingest.html?view=machines",
+      labelKey: "nav.ingestMachines",
+      key: "ingest-machines",
+    },
+    {
       href: "./ingest.html?view=setup",
       labelKey: "nav.ingestSetup",
       key: "ingest-setup",
@@ -65,11 +70,18 @@ function ingestApp(account) {
     },
   ];
   if (account.role === "it") {
-    items.push({
-      href: "./ingest.html?view=fleet",
-      labelKey: "nav.ingestFleet",
-      key: "ingest-fleet",
-    });
+    items.push(
+      {
+        href: "./ingest.html?view=fleet",
+        labelKey: "nav.ingestFleet",
+        key: "ingest-fleet",
+      },
+      {
+        href: "./ingest.html?view=shared",
+        labelKey: "nav.ingestShared",
+        key: "ingest-shared",
+      }
+    );
   }
   return { id: "ingest", appKey: "app.ingest", items };
 }
@@ -187,8 +199,15 @@ export function navGroupsFor(account) {
 /** 根据当前页 key 解析所属 App；二级菜单只渲染该 App */
 export function resolveNav(account, activeKey) {
   const groups = navGroupsFor(account);
-  const current =
-    groups.find((g) => g.items.some((i) => i.key === activeKey)) || groups[0];
+  let current = groups.find((g) => g.items.some((i) => i.key === activeKey));
+  // 防回退错 App：ingest-* 找不到时仍落文档入库，勿落到 aiSpace
+  if (!current && String(activeKey || "").startsWith("ingest")) {
+    current = groups.find((g) => g.id === "ingest");
+  }
+  if (!current && String(activeKey || "").startsWith("sync-")) {
+    current = groups.find((g) => g.id === "ingest");
+  }
+  if (!current) current = groups[0];
   return {
     groups,
     currentApp: current,

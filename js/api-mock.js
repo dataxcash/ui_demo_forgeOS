@@ -433,91 +433,325 @@ export async function getAiToolRuns(toolId) {
   };
 }
 
-/** 文档入库：基线 mock + session 向导进度 */
-export async function getIngestState() {
-  await delay();
-  const base = await loadJson("../mock/ingest/state.json");
+/** 文档入库：多机归属 + session 向导进度（docs/130） */
+async function loadIngestCatalog() {
+  return loadJson("../mock/ingest/machines.json");
+}
+
+function ingestSession() {
   const st = readState();
-  const ing = st.ingest || {};
-  const bootstrapInstalled = !!ing.bootstrapInstalled;
-  const adminDone = !!ing.adminDone;
-  const probeReady = !!ing.probeReady;
-  let phase = "need_bootstrap";
-  if (bootstrapInstalled && !adminDone) phase = "need_admin";
-  if (bootstrapInstalled && adminDone && !probeReady) phase = "provisioning";
-  if (bootstrapInstalled && adminDone && probeReady) phase = "ready";
+  if (!st.ingest) st.ingest = {};
+  if (!st.ingest.byMachine) st.ingest.byMachine = {};
+  if (!st.ingest.extraMachines) st.ingest.extraMachines = [];
+  return st;
+}
+
+function allMachinesFrom(st, cat) {
+  return [...(cat.machines || []), ...(st.ingest?.extraMachines || [])];
+}
+
+function canAccessMachine(account, machine) {
+  if (!account || !machine) return false;
+  if (account.role === "it") return true;
+  return machine.ownerAccount === account.id;
+}
+
+function computePhase(machine, ov) {
+  if (machine.phase === "ready" && !ov.forceWizard) return "ready";
+  const bootstrapInstalled =
+    ov.bootstrapInstalled != null
+      ? !!ov.bootstrapInstalled
+      : !!machine.bootstrap?.installed;
+  const adminDone =
+    ov.adminDone != null ? !!ov.adminDone : !!machine.adminAuth?.done;
+  const probeReady =
+    ov.probeReady != null
+      ? !!ov.probeReady
+      : machine.phase === "ready" || machine.probe?.slimSync === "在线";
+  if (!bootstrapInstalled) return "need_bootstrap";
+  if (!adminDone) return "need_admin";
+  if (!probeReady) return "provisioning";
+  return "ready";
+}
+
+function hydrateMachineState(machine, ov) {
+  const phase = computePhase(machine, ov);
+  const bootstrapInstalled =
+    ov.bootstrapInstalled != null
+      ? !!ov.bootstrapInstalled
+      : !!machine.bootstrap?.installed || phase === "ready";
+  const adminDone =
+    ov.adminDone != null
+      ? !!ov.adminDone
+      : !!machine.adminAuth?.done || phase === "ready";
+  const probeReady = phase === "ready";
+  const dirs =
+    ov.dirs != null ? ov.dirs : Array.isArray(machine.dirs) ? machine.dirs : [];
+
+  let probe = machine.probe || {
+    slimSync: "未安装",
+    version: null,
+    lastHeartbeat: null,
+  };
+  if (probeReady) {
+    probe = {
+      slimSync: ov.probeSlimSync || machine.probe?.slimSync || "在线",
+      version: ov.probeVersion || machine.probe?.version || "0.9.2-win",
+      lastHeartbeat:
+        ov.probeSeen ||
+        machine.probe?.lastHeartbeat ||
+        new Date().toISOString().slice(0, 16).replace("T", " "),
+    };
+  } else if (adminDone) {
+    probe = { slimSync: "安装中", version: null, lastHeartbeat: null };
+  }
 
   return {
-    ...base,
+    machineId: machine.id,
+    ownerAccount: machine.ownerAccount,
+    ownerName: machine.ownerName,
+    host: machine.host,
+    osType: machine.osType || "Windows",
+    osDetail: machine.osDetail || "",
+    sshd: machine.sshd || (probe.slimSync === "在线" ? "在线" : "未知"),
     phase,
     bootstrap: {
-      ...base.bootstrap,
+      ...(machine.bootstrap || {}),
       installed: bootstrapInstalled,
       lastSeen: bootstrapInstalled
-        ? ing.bootstrapSeen || "2026-09-30 18:00"
+        ? ov.bootstrapSeen || machine.bootstrap?.lastSeen || null
         : null,
     },
     adminAuth: {
-      ...base.adminAuth,
+      ...(machine.adminAuth || { note: "管理员账密仅本次使用，不落库" }),
       done: adminDone,
     },
     syncAccount: {
-      ...base.syncAccount,
+      ...(machine.syncAccount || {
+        username: "fos-ingest",
+        userVisible: false,
+      }),
       created: adminDone || probeReady,
     },
-    probe: probeReady
-      ? {
-          slimSync: "在线",
-          version: "0.9.2-win",
-          lastHeartbeat: ing.probeSeen || "2026-09-30 18:05",
-        }
-      : adminDone
-        ? {
-            slimSync: "安装中",
-            version: null,
-            lastHeartbeat: null,
-          }
-        : base.probe,
-    dirs: ing.dirs || base.dirs,
+    probe,
+    dirs,
+    stats: machine.stats || { todayUploaded: "—", todayFiles: 0 },
   };
 }
 
-export async function ingestMarkBootstrapInstalled() {
-  const st = readState();
-  st.ingest = {
-    ...(st.ingest || {}),
+export async function listIngestMachines(account) {
+  await delay(60);
+  const cat = await loadIngestCatalog();
+  const st = ingestSession();
+  const all = allMachinesFrom(st, cat).map((m) => {
+    const ov = st.ingest.byMachine[m.id] || {};
+    const hydrated = hydrateMachineState(m, ov);
+    return {
+      id: m.id,
+      ownerAccount: m.ownerAccount,
+      ownerName: m.ownerName,
+      host: m.host,
+      osType: hydrated.osType,
+      osDetail: hydrated.osDetail,
+      phase: hydrated.phase,
+      probe: hydrated.probe,
+      sshd: hydrated.sshd,
+      dirCount: (hydrated.dirs || []).length,
+      mine: account?.id === m.ownerAccount,
+      canManage: canAccessMachine(account, m),
+    };
+  });
+  if (account?.role === "it") return { items: all, selectedId: null };
+  return {
+    items: all.filter((m) => m.ownerAccount === account?.id),
+    selectedId: null,
+  };
+}
+
+export async function getSelectedIngestMachineId(account, preferredId) {
+  const cat = await loadIngestCatalog();
+  const st = ingestSession();
+  const all = allMachinesFrom(st, cat);
+  const prefer = preferredId || st.ingest.selectedMachineId || null;
+  if (prefer) {
+    const m = all.find((x) => x.id === prefer);
+    if (m && canAccessMachine(account, m)) return prefer;
+  }
+  const mine = all.find((x) => x.ownerAccount === account?.id);
+  if (mine) return mine.id;
+  if (account?.role === "it" && all[0]) return all[0].id;
+  return null;
+}
+
+export async function setSelectedIngestMachine(account, machineId) {
+  await delay(40);
+  const cat = await loadIngestCatalog();
+  const st = ingestSession();
+  const m = allMachinesFrom(st, cat).find((x) => x.id === machineId);
+  if (!m || !canAccessMachine(account, m)) {
+    return { ok: false, error: "无权操作该机器" };
+  }
+  st.ingest.selectedMachineId = machineId;
+  writeState(st);
+  return { ok: true, machineId };
+}
+
+export async function registerIngestMachine(account, opts = {}) {
+  await delay(200);
+  if (!account?.id) return { ok: false, error: "未登录" };
+  const cat = await loadIngestCatalog();
+  const st = ingestSession();
+  const host =
+    String(opts.host || "").trim() ||
+    `${account.name || "我"}-新机器`;
+  const id = "M-" + Date.now();
+  const tpl = cat.bootstrapTemplate || {};
+  const machine = {
+    id,
+    ownerAccount: account.id,
+    ownerName: account.name || account.id,
+    host,
+    osType: opts.osType || "Windows",
+    osDetail: opts.osDetail || "Windows 11",
+    phase: "need_bootstrap",
+    bootstrap: {
+      installed: false,
+      version: tpl.version || "fos-sshd 0.1.0",
+      downloadName: tpl.downloadName || "ForgeOS-Guide-SSHD-Setup.exe",
+      port: tpl.port || 2222,
+      lastSeen: null,
+    },
+    adminAuth: { done: false, note: "管理员账密仅本次使用，不落库" },
+    syncAccount: {
+      created: false,
+      username: "fos-ingest",
+      userVisible: false,
+    },
+    probe: { slimSync: "未安装", version: null, lastHeartbeat: null },
+    dirs: [],
+    stats: { todayUploaded: "—", todayFiles: 0 },
+  };
+  st.ingest.extraMachines = [...(st.ingest.extraMachines || []), machine];
+  st.ingest.selectedMachineId = id;
+  writeState(st);
+  return { ok: true, machine };
+}
+
+async function resolveTargetMachine(account, machineIdOpt) {
+  const cat = await loadIngestCatalog();
+  const st = ingestSession();
+  const id =
+    machineIdOpt || (await getSelectedIngestMachineId(account, machineIdOpt));
+  if (!id) return { error: "请先选择机器" };
+  const machine = allMachinesFrom(st, cat).find((x) => x.id === id);
+  if (!machine || !canAccessMachine(account, machine)) {
+    return { error: "无权操作该机器" };
+  }
+  return { st, cat, machine, ov: st.ingest.byMachine[id] || {} };
+}
+
+export async function getIngestState(account, machineIdOpt) {
+  await delay();
+  const resolved = await resolveTargetMachine(account, machineIdOpt);
+  if (resolved.error) {
+    return {
+      phase: "no_machine",
+      error: resolved.error,
+      machineId: null,
+      dirs: [],
+      fleet: [],
+    };
+  }
+  const { st, machine, ov } = resolved;
+  st.ingest.selectedMachineId = machine.id;
+  writeState(st);
+  const state = hydrateMachineState(machine, ov);
+  const fleet = (await listIngestMachines({ role: "it", id: "wu.it" })).items.map(
+    (r) => ({
+      id: r.id,
+      user: r.ownerName,
+      ownerAccount: r.ownerAccount,
+      host: r.host,
+      sshd: r.sshd || "未知",
+      slimSync: r.probe?.slimSync || "未知",
+      version: r.probe?.version || "—",
+      lastSeen: r.probe?.lastHeartbeat || "—",
+      phase: r.phase,
+    })
+  );
+  return { ...state, fleet };
+}
+
+function patchMachineOverlay(machineId, patch) {
+  const st = ingestSession();
+  st.ingest.byMachine[machineId] = {
+    ...(st.ingest.byMachine[machineId] || {}),
+    ...patch,
+  };
+  st.ingest.selectedMachineId = machineId;
+  writeState(st);
+}
+
+export async function ingestMarkBootstrapInstalled(account, machineIdOpt) {
+  const resolved = await resolveTargetMachine(account, machineIdOpt);
+  if (resolved.error) return { ok: false, error: resolved.error };
+  patchMachineOverlay(resolved.machine.id, {
     bootstrapInstalled: true,
     bootstrapSeen: new Date().toISOString().slice(0, 16).replace("T", " "),
-  };
-  writeState(st);
-  return getIngestState();
+    forceWizard: true,
+  });
+  return getIngestState(account, resolved.machine.id);
 }
 
-export async function ingestSubmitAdmin(_user, _pass) {
+export async function ingestSubmitAdmin(account, _user, _pass, machineIdOpt) {
   await delay(400);
-  const st = readState();
-  st.ingest = {
-    ...(st.ingest || {}),
+  const resolved = await resolveTargetMachine(account, machineIdOpt);
+  if (resolved.error) return { ok: false, error: resolved.error };
+  patchMachineOverlay(resolved.machine.id, {
     bootstrapInstalled: true,
     adminDone: true,
     probeReady: false,
-  };
-  writeState(st);
-  // 演示：短暂「安装中」后由页面再点「刷新探针」就绪
-  return getIngestState();
+    forceWizard: true,
+  });
+  return getIngestState(account, resolved.machine.id);
 }
 
-export async function ingestMarkProbeReady() {
-  const st = readState();
-  st.ingest = {
-    ...(st.ingest || {}),
+export async function ingestMarkProbeReady(account, machineIdOpt) {
+  const resolved = await resolveTargetMachine(account, machineIdOpt);
+  if (resolved.error) return { ok: false, error: resolved.error };
+  patchMachineOverlay(resolved.machine.id, {
     bootstrapInstalled: true,
     adminDone: true,
     probeReady: true,
+    forceWizard: false,
     probeSeen: new Date().toISOString().slice(0, 16).replace("T", " "),
-  };
-  writeState(st);
-  return getIngestState();
+    probeSlimSync: "在线",
+    probeVersion: "0.9.2-win",
+  });
+  // 额外：把 extraMachines 基线 phase 提到 ready，避免反复 force
+  const st = ingestSession();
+  const extras = st.ingest.extraMachines || [];
+  const ix = extras.findIndex((m) => m.id === resolved.machine.id);
+  if (ix >= 0) {
+    extras[ix] = {
+      ...extras[ix],
+      phase: "ready",
+      bootstrap: {
+        ...extras[ix].bootstrap,
+        installed: true,
+        lastSeen: st.ingest.byMachine[resolved.machine.id]?.bootstrapSeen,
+      },
+      adminAuth: { ...extras[ix].adminAuth, done: true },
+      probe: {
+        slimSync: "在线",
+        version: "0.9.2-win",
+        lastHeartbeat: st.ingest.byMachine[resolved.machine.id]?.probeSeen,
+      },
+    };
+    st.ingest.extraMachines = extras;
+    writeState(st);
+  }
+  return getIngestState(account, resolved.machine.id);
 }
 
 /** 本机目录浏览（演示：模拟探针侧列目录） */
@@ -562,17 +796,21 @@ function parentPath(p) {
   return norm.slice(0, i + 1);
 }
 
-export async function ingestAddDir(path) {
-  const res = await ingestAddDirs([path]);
+export async function ingestAddDir(account, path, machineIdOpt) {
+  const res = await ingestAddDirs(account, [path], machineIdOpt);
   if (!res.ok) return res;
   return { ok: true, dirs: res.dirs, added: res.added };
 }
 
-/** 批量加入监视目录 */
-export async function ingestAddDirs(paths) {
+/** 批量加入监视目录（当前目标机） */
+export async function ingestAddDirs(account, paths, machineIdOpt) {
   await delay(180);
-  const st = readState();
-  const cur = await getIngestState();
+  const resolved = await resolveTargetMachine(account, machineIdOpt);
+  if (resolved.error) return { ok: false, error: resolved.error };
+  const cur = hydrateMachineState(resolved.machine, resolved.ov);
+  if (cur.phase !== "ready") {
+    return { ok: false, error: "请先完成本机接入" };
+  }
   const dirs = [...(cur.dirs || [])];
   const existing = new Set(dirs.map((d) => d.path));
   const added = [];
@@ -605,19 +843,27 @@ export async function ingestAddDirs(paths) {
       skipped,
     };
   }
-  st.ingest = { ...(st.ingest || {}), dirs };
-  writeState(st);
+  patchMachineOverlay(resolved.machine.id, { dirs });
   return { ok: true, dirs, added, skipped };
 }
 
-export async function ingestRemoveDir(id) {
+export async function ingestRemoveDir(account, id, machineIdOpt) {
   await delay(120);
-  const st = readState();
-  const cur = await getIngestState();
+  const resolved = await resolveTargetMachine(account, machineIdOpt);
+  if (resolved.error) return { ok: false, error: resolved.error };
+  const cur = hydrateMachineState(resolved.machine, resolved.ov);
   const dirs = (cur.dirs || []).filter((d) => d.id !== id);
-  st.ingest = { ...(st.ingest || {}), dirs };
-  writeState(st);
+  patchMachineOverlay(resolved.machine.id, { dirs });
   return { ok: true, dirs };
+}
+
+export async function listSharedSources(account) {
+  await delay(80);
+  if (account?.role !== "it") {
+    return { ok: false, error: "仅 IT 可管理共享源", items: [] };
+  }
+  const cat = await loadIngestCatalog();
+  return { ok: true, items: cat.sharedSources || [] };
 }
 
 /** 文件入库：Web 直传后台 → slimRAG（不经 slimSync） */

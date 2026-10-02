@@ -2,7 +2,7 @@
  * 页面注册表：路径 → 动态模块。
  * 未登记的 .html 仍走整页跳转（如 login）。
  */
-const V = "nav42";
+const V = "nav46";
 
 function page(path) {
   return () => import(`${path}?v=${V}`);
@@ -39,6 +39,8 @@ const ALIASES = {
   "ask.html": { key: "aispace.html", view: "mine" },
   "ingest-upload.html": { key: "ingest.html", view: "upload" },
   "ingest-setup.html": { key: "ingest.html", view: "setup" },
+  "ingest-machines.html": { key: "ingest.html", view: "machines" },
+  "ingest-shared.html": { key: "ingest.html", view: "shared" },
   "sync-status.html": { key: "ingest.html", view: "manage" },
   "ingest-fleet.html": { key: "ingest.html", view: "fleet" },
   "ingest-dirs.html": { key: "ingest.html", view: "manage" },

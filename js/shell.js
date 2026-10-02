@@ -1,14 +1,14 @@
-import { esc } from "./esc.js?v=nav42";
-import { loadI18n, t } from "./i18n.js?v=nav42";
+import { esc } from "./esc.js?v=nav46";
+import { loadI18n, t } from "./i18n.js?v=nav46";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav42";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav42";
-import { confirmDialog } from "./confirm.js?v=nav42";
+} from "./session.js?v=nav46";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav46";
+import { confirmDialog } from "./confirm.js?v=nav46";
 
 const STATUS_MUTE_APPS = new Set(["aitools", "ingest"]);
 
@@ -35,7 +35,7 @@ export async function ensureShell(account, active) {
 /** @deprecated 兼容旧页；请用 ensureShell + startPage */
 export async function mountShell({ account, active }) {
   await ensureShell(account, active);
-  const { installSoftNav } = await import("./soft-nav.js?v=nav42");
+  const { installSoftNav } = await import("./soft-nav.js?v=nav46");
   installSoftNav();
 }
 
@@ -214,7 +214,7 @@ function wireShellChrome(account, active) {
       if (!acc || acc.stub) return;
       setAccountId(id);
       menu.classList.remove("show");
-      const { softNavigate } = await import("./soft-nav.js?v=nav42");
+      const { softNavigate } = await import("./soft-nav.js?v=nav46");
       shellAccount = acc;
       await softNavigate(new URL(homeFor(acc), location.href), { push: true });
     });
@@ -269,7 +269,7 @@ function wireShellChrome(account, active) {
           if (typeof window.__hrPrefillNormal === "function") {
             window.__hrPrefillNormal();
           } else {
-            const { softNavigate } = await import("./soft-nav.js?v=nav42");
+            const { softNavigate } = await import("./soft-nav.js?v=nav46");
             await softNavigate(new URL("./hr-import.html", location.href), {
               push: true,
             });

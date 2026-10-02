@@ -1,5 +1,5 @@
-import { resolvePageLoader, canonicalizeUrl } from "./page-registry.js?v=nav42";
-import { ensureShell, getShellAccount, refreshShellChrome } from "./shell.js?v=nav42";
+import { resolvePageLoader, canonicalizeUrl } from "./page-registry.js?v=nav46";
+import { ensureShell, getShellAccount, refreshShellChrome } from "./shell.js?v=nav46";
 
 let installed = false;
 let navigating = false;
@@ -7,6 +7,19 @@ let navigating = false;
 function isHardNav(url) {
   const n = url.pathname.split("/").pop() || "";
   return n === "login.html";
+}
+
+/** 非 IT 不得落在机器总览/共享源（否则 activeKey 找不到项，侧栏会回退到第一组 App） */
+function clampIngestUrl(url, account) {
+  const name = url.pathname.split("/").pop() || "";
+  if (name !== "ingest.html" || account?.role === "it") return url;
+  const view = url.searchParams.get("view");
+  if (view === "fleet" || view === "shared") {
+    const next = new URL(url.href);
+    next.searchParams.set("view", "upload");
+    return next;
+  }
+  return url;
 }
 
 export function installSoftNav() {
@@ -57,7 +70,7 @@ export async function softNavigate(to, { push = true } = {}) {
     location.href = raw.href;
     return;
   }
-  const url = entry.canon || canonicalizeUrl(raw);
+  let url = entry.canon || canonicalizeUrl(raw);
   if (navigating) return;
   navigating = true;
   try {
@@ -66,6 +79,7 @@ export async function softNavigate(to, { push = true } = {}) {
       location.href = "./login.html";
       return;
     }
+    url = clampIngestUrl(url, account);
     const mod = await entry.load();
     if (mod.roles && !mod.roles.includes(account.role)) {
       navigating = false;
@@ -107,14 +121,15 @@ export async function softNavigate(to, { push = true } = {}) {
 
 /** 首屏启动：挂壳 + 激活当前页模块 + 启用软导航 */
 export async function startPage(mod) {
-  const { requireAccount } = await import("./session.js?v=nav42");
+  const { requireAccount } = await import("./session.js?v=nav46");
   const account = await requireAccount();
   if (!account) return;
   if (mod.roles && !mod.roles.includes(account.role)) {
     location.href = "./no-access.html";
     return;
   }
-  const url = new URL(location.href);
+  let url = clampIngestUrl(new URL(location.href), account);
+  if (url.href !== location.href) history.replaceState({}, "", url.href);
   const active =
     typeof mod.activeKey === "function"
       ? mod.activeKey(url)

@@ -28,10 +28,26 @@
         },
         {
           "id": "aispace-api",
-          "name": "aiSpace 服务",
+          "name": "aispace",
           "role": "下游",
           "status": "运行中",
-          "detail": "工作台 API 正常",
+          "detail": "业务工作台后端 · API 正常",
+          "canRestart": true
+        },
+        {
+          "id": "slimgraphd",
+          "name": "slimgraphd",
+          "role": "下游",
+          "status": "运行中",
+          "detail": "主题谱系 · graph.* UDS",
+          "canRestart": true
+        },
+        {
+          "id": "slimrag",
+          "name": "slimRAG",
+          "role": "下游",
+          "status": "运行中",
+          "detail": "切段检索入库正常",
           "canRestart": true
         },
         {

@@ -6,9 +6,9 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav42";
-import { confirmDialog } from "../confirm.js?v=nav42";
-import { esc } from "../esc.js?v=nav42";
+} from "../api-mock.js?v=nav46";
+import { confirmDialog } from "../confirm.js?v=nav46";
+import { esc } from "../esc.js?v=nav46";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -38,7 +38,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav42");
+    const { softNavigate } = await import("../soft-nav.js?v=nav46");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -94,7 +94,7 @@ export async function activate({ account, url, root }) {
         <a class="btn" href="./it-home.html?view=services">服务层次</a>
         <a class="btn" href="./it-home.html?view=remote">远程机器</a>
         <a class="btn" href="./it-home.html?view=compute">算力与 GPU</a>
-        <a class="btn" href="./it-home.html?view=aispace">aiSpace 容量</a>
+        <a class="btn" href="./it-home.html?view=aispace">aiSpace 后端</a>
       </div>`;
 
     const alerts = root.querySelector("#alerts");
@@ -477,35 +477,50 @@ export async function activate({ account, url, root }) {
   }
 
   async function paintAispace() {
-    document.title = "aiSpace 容量 · 系统管理";
     const a = await getItAispaceCap();
+    const title = a.pageTitle || "aiSpace 后端";
+    document.title = `${title} · 系统管理`;
     const usedPct = Math.round(
       (a.capacity.objectsTb / a.capacity.objectsLimitTb) * 100
     );
     root.innerHTML = `
       <div class="page-head">
-        <h1>aiSpace 容量</h1>
-        <p>${esc(a.capacity.note)}</p>
+        <h1>${esc(title)}</h1>
+        <p>${esc(a.pageSub || a.capacity.note || "")}</p>
       </div>
-      <h2 class="it-sec-title">相关服务</h2>
+      <h2 class="it-sec-title">${esc(a.servicesTitle || "后端组件")}</h2>
       <div class="grid-2">
         ${a.services
           .map(
             (s) => `<div class="card">
-            <strong>${esc(s.name)}</strong>
-            <div style="margin-top:6px"><span class="pill ${
-              s.status === "正常" ? "ok" : "warn"
-            }">${esc(s.status)}</span></div>
+            <div class="deal-title"><code>${esc(s.name || s.id)}</code>
+              ${s.kind ? `<span class="pill" style="margin-left:6px">${esc(s.kind)}</span>` : ""}
+            </div>
+            <div class="deal-meta" style="margin-top:6px">
+              <span class="pill ${s.status === "正常" ? "ok" : "warn"}">${esc(
+                s.status
+              )}</span>
+              <span class="muted">${esc(s.role || "")}</span>
+            </div>
+            ${
+              s.detail
+                ? `<p class="muted small" style="margin:8px 0 0">${esc(
+                    s.detail
+                  )}</p>`
+                : ""
+            }
           </div>`
           )
           .join("")}
       </div>
-      <h2 class="it-sec-title">对象容量</h2>
+      <h2 class="it-sec-title">${esc(a.capacity.title || "对象库用量")}</h2>
       <div class="card">
         <div class="stat">${a.capacity.objectsTb} TB
           <span class="stat-label">/ ${a.capacity.objectsLimitTb} TB</span></div>
         <div class="it-bar"><i style="width:${usedPct}%"></i></div>
-        <p class="muted small" style="margin:6px 0 0">已用约 ${usedPct}%</p>
+        <p class="muted small" style="margin:6px 0 0">已用约 ${usedPct}% · ${esc(
+          a.capacity.note || ""
+        )}</p>
       </div>
       <h2 class="it-sec-title">水位</h2>
       <div class="it-metrics">
