@@ -1,5 +1,5 @@
-import { getBoss } from "../api-mock.js?v=nav18";
-import { esc } from "../esc.js?v=nav18";
+import { getBoss } from "../api-mock.js?v=nav47";
+import { esc } from "../esc.js?v=nav47";
 
 export const roles = ["boss"];
 export const active = "boss";

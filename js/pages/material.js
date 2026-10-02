@@ -1,5 +1,5 @@
-import { getDeal } from "../api-mock.js?v=nav18";
-import { esc } from "../esc.js?v=nav18";
+import { getDeal } from "../api-mock.js?v=nav47";
+import { esc } from "../esc.js?v=nav47";
 
 export const roles = ["employee", "manager", "boss"];
 export const active = "my-deals";
@@ -23,7 +23,7 @@ document.getElementById("back").innerHTML = dealId
 document.title = `${file} · 查阅`;
 document.getElementById("head").innerHTML = `
   <h1>${esc(file)}</h1>
-  <p>${seg ? `<span class="pill">${esc(seg)}</span>` : ""}${esc(summary || "材料预览（演示）")}</p>`;
+  <p>${seg ? `<span class="pill">${esc(seg)}</span>` : ""}${esc(summary || "材料预览")}</p>`;
 
 let extra = "";
 if (dealId) {
@@ -40,7 +40,7 @@ if (dealId) {
 }
 
 document.getElementById("body").innerHTML = `
-  <div class="muted small" style="margin-bottom:8px">文件预览（演示稿 · 正式环境打开原文）</div>
+  <div class="muted small" style="margin-bottom:8px">文件预览</div>
   <pre style="margin:0;white-space:pre-wrap;font-family:var(--font-mono);font-size:12px;line-height:1.5">【${esc(
     file
   )}】

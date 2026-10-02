@@ -1,6 +1,5 @@
-import { getMyDeals, getDeal, askDeal } from "../api-mock.js?v=nav33";
-import { esc } from "../esc.js?v=nav33";
-import { rulesHtml, CRM_BOUNDARY } from "../deal-rules.js?v=nav33";
+import { getMyDeals, getDeal, askDeal } from "../api-mock.js?v=nav47";
+import { esc } from "../esc.js?v=nav47";
 
 export const roles = ["employee", "manager", "boss"];
 export const title = "aiSpace";
@@ -49,7 +48,7 @@ function tipUrl() {
 function levelClass(b) {
   if (b === "须尽快") return "danger";
   if (b === "这周要动") return "warn";
-  return "";
+  return "ok";
 }
 function mark(on, text) {
   return on ? `<span class="hl">${text}</span>` : text;
@@ -61,7 +60,7 @@ async function switchView(next, push, extra = {}) {
   if (extra.id) dealId = extra.id;
   if (extra.from) returnView = extra.from;
   if (extra.f) filter = extra.f;
-  const { softNavigate } = await import(`../soft-nav.js?v=nav33`);
+  const { softNavigate } = await import(`../soft-nav.js?v=nav47`);
   await softNavigate(tipUrl(), { push });
 }
 
@@ -88,10 +87,9 @@ async function paintMine() {
       <p>${
         isHr
           ? "人事这边跟进的事，比如找材料给法务。花名册对比出来的入职离职，在左边「待办事项」；谁离职还没交清，点开那条离职就能看。"
-          : "只看待办。选中筛选项只高亮对应数字，不重复写一遍。"
+          : "只看待办。选中筛选项只高亮对应数字。"
       }</p>
     </div>
-    ${isHr ? "" : `<div id="rules">${rulesHtml()}</div>`}
     <div class="toolbar">
       <div class="seg" id="filter">
         <button type="button" data-f="all">全部</button>
@@ -133,13 +131,9 @@ async function paintMine() {
               <span class="muted">${esc(d.owner)}</span>
             </div>
             <div class="deal-why">${esc(d.why)}</div>
-            <div class="deal-why muted" style="margin-top:2px">入桶：${esc(
-              d.ruleHit || d.bucket
-            )}</div>
           </div>
           <div class="deal-side">
             <span class="pill ${levelClass(d.bucket)}">${esc(d.bucket)}</span>
-            <span class="deal-go">打开</span>
           </div>
         </button>`
         )
@@ -178,9 +172,8 @@ async function paintTeam() {
   viewRoot.innerHTML = `
     <div class="page-head">
       <h1>组里的单</h1>
-      <p>默认看「须尽快」灭火队列。人员 × 分桶可组合。</p>
+      <p>默认看「须尽快」。可按人员、分桶筛选。</p>
     </div>
-    <div id="rules">${rulesHtml()}</div>
     <div class="toolbar">
       <span class="muted small">人员</span>
       <div class="seg" id="f-person"></div>
@@ -253,7 +246,6 @@ async function paintTeam() {
           </div>
           <div class="deal-side">
             <span class="pill ${levelClass(d.bucket)}">${esc(d.bucket)}</span>
-            <span class="deal-go">打开</span>
           </div>
         </button>`
         )
@@ -307,7 +299,6 @@ async function paintDone() {
             </div>
             <div class="deal-why">${esc(d.why)}</div>
           </div>
-          <div class="deal-side"><span class="deal-go">查看</span></div>
         </button>`
         )
         .join("")
@@ -375,23 +366,15 @@ async function paintDeal() {
       <p>
         <span class="pill">${esc(deal.type)}</span>
         <span class="pill ${deal.open ? "warn" : "ok"}">${esc(deal.status)}</span>
-        ${deal.bucket ? `<span class="pill">${esc(deal.bucket)}</span>` : ""}
+        ${
+          deal.bucket
+            ? `<span class="pill ${levelClass(deal.bucket)}">${esc(deal.bucket)}</span>`
+            : ""
+        }
         · 负责人 ${esc(deal.owner)}
         · ${deal.open ? esc(deal.why) : "已完成"}
       </p>
-      ${
-        deal.ruleHit
-          ? `<p class="muted small" style="margin-top:6px">${
-              isHr ? "为什么排在这里" : "入桶依据"
-            }：${esc(deal.ruleHit)}</p>`
-          : ""
-      }
     </div>
-      <p class="crm-note" style="margin:0 0 12px;padding:8px 10px;border:1px solid var(--line);background:var(--surface)">${esc(
-        isHr
-          ? "这里只整理你权限内能看到的材料和原文从哪来的，不代替法务下结论。谁离职还没交清，去「待办事项」里点开那个人。"
-          : CRM_BOUNDARY
-      )}</p>
     <section class="deal-section">
       <h2>现在怎样</h2>
       <div class="deal-summary">

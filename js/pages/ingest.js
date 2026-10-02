@@ -13,9 +13,9 @@ import {
   getSelectedIngestMachineId,
   registerIngestMachine,
   listSharedSources,
-} from "../api-mock.js?v=nav45";
-import { confirmDialog } from "../confirm.js?v=nav45";
-import { esc } from "../esc.js?v=nav45";
+} from "../api-mock.js?v=nav47";
+import { confirmDialog } from "../confirm.js?v=nav47";
+import { esc } from "../esc.js?v=nav47";
 
 export const roles = ["employee", "manager", "boss", "hr", "it"];
 export const title = "文档入库";
@@ -118,7 +118,7 @@ export async function activate({ account, url, root }) {
     if (mid && next !== "upload" && next !== "machines" && next !== "shared") {
       u.searchParams.set("machine", mid);
     }
-    const { softNavigate } = await import("../soft-nav.js?v=nav45");
+    const { softNavigate } = await import("../soft-nav.js?v=nav47");
     await softNavigate(u, { push: !!pushUrl });
   }
 
@@ -431,7 +431,7 @@ export async function activate({ account, url, root }) {
         </div>
       </div>`;
       document.getElementById("btn-dl").onclick = () =>
-        tip("已开始下载（演示）");
+        tip("已开始下载");
       document.getElementById("btn-check").onclick = async () => {
         await ingestMarkBootstrapInstalled(account, mid);
         tip("连通正常");
@@ -909,7 +909,7 @@ export async function activate({ account, url, root }) {
     u.searchParams.set("view", "upload");
     history.replaceState({}, "", u);
     url = u;
-    const { refreshShellChrome } = await import("../shell.js?v=nav45");
+    const { refreshShellChrome } = await import("../shell.js?v=nav47");
     await refreshShellChrome(account, VIEWS.upload.key);
   }
   if (!VIEWS[view]) view = "upload";

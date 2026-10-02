@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>登录 · ForgeOS WebUI</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=nav45" />
-  <link rel="stylesheet" href="../css/shell.css?v=nav45" />
-  <link rel="stylesheet" href="../css/pages.css?v=nav45" />
+  <title>ForgeOS</title>
+  <link rel="stylesheet" href="../css/tokens.css?v=nav47" />
+  <link rel="stylesheet" href="../css/shell.css?v=nav47" />
+  <link rel="stylesheet" href="../css/pages.css?v=nav47" />
 </head>
 <body>
   <div class="login-page">
     <div class="login-card">
-      <div class="logo" id="logo">ForgeOS WebUI</div>
-      <p class="sub" id="sub">选择账户进入（一账户一 ROLE；兼岗请切换账户）</p>
+      <div class="logo" id="logo">ForgeOS</div>
+      <p class="sub" id="sub">选择账户进入</p>
       <div class="account-picks" id="picks"></div>
     </div>
   </div>
   <script type="module">
-    import { loadAccounts, setAccountId, homeFor, getAccountId } from "../js/session.js?v=nav45";
-    import { loadI18n, t } from "../js/i18n.js?v=nav45";
-    import { esc } from "../js/esc.js?v=nav45";
+    import { loadAccounts, setAccountId, homeFor, getAccountId } from "../js/session.js?v=nav47";
+    import { loadI18n, t } from "../js/i18n.js?v=nav47";
+    import { esc } from "../js/esc.js?v=nav47";
 
     await loadI18n("zh-CN");
     document.getElementById("logo").textContent = t("login.title");
@@ -40,7 +40,7 @@
       .map(
         (a) => `<button type="button" data-id="${esc(a.id)}">
           ${esc(a.name)}
-          <span class="role">${esc(a.title)} · ${esc(a.id)}</span>
+          <span class="role">${esc(a.title)}</span>
         </button>`
       )
       .join("");

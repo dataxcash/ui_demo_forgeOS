@@ -1162,7 +1162,7 @@ export async function askCopilot({ account, question, pageKey }) {
       text: cite([
         `整机总判：${dash.overall}。${dash.overallNote || ""}`,
         failed.length
-          ? `夜间作业失败 ${failed.length} 条（资源向）。`
+          ? `夜间作业失败 ${failed.length} 条。`
           : "夜间作业当前无失败。",
         "可问：服务树、远程探针、Token 消耗、显存。",
       ]),

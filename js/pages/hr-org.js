@@ -5,9 +5,9 @@ import {
   confirmOrgTasks,
   archiveOrgTasks,
   getOrgCurrent,
-} from "../api-mock.js?v=nav33";
-import { confirmDialog } from "../confirm.js?v=nav33";
-import { esc } from "../esc.js?v=nav33";
+} from "../api-mock.js?v=nav47";
+import { confirmDialog } from "../confirm.js?v=nav47";
+import { esc } from "../esc.js?v=nav47";
 
 export const roles = ["hr"];
 export const title = "aiSpace";
@@ -37,7 +37,7 @@ export async function activate({ account, url, root }) {
   const taskId = url.searchParams.get("id") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav33");
+    const { softNavigate } = await import("../soft-nav.js?v=nav47");
     const u = new URL("./hr-org.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.id) u.searchParams.set("id", extra.id);
@@ -142,7 +142,7 @@ export async function activate({ account, url, root }) {
         </div>
       </div>
       <p class="muted small" style="margin-top:14px">
-        演示可先下载样例再上传：
+        可先下载样例再上传：
         <a href="../mock/hr/org-2026-10-01.csv" download="org-2026-10-01.csv">org-2026-10-01.csv</a>
         （新人周小白、沈芳；许晴转到售前；冯磊岗位改成开发；花名册里已没有赵强、顾军）。
       </p>`;
@@ -327,10 +327,11 @@ export async function activate({ account, url, root }) {
     const check = readonly
       ? ""
       : `<input type="checkbox" value="${esc(t.id)}" onclick="event.stopPropagation()" />`;
-    let goLabel = "打开";
-    if (mode === "done" || t.status === "done") goLabel = "已确认";
-    else if (mode === "archived" || t.status === "archived") goLabel = "已存档";
-    else if (t.handoverId) goLabel = "看他还剩什么";
+    let side = "";
+    if (mode === "done" || t.status === "done") side = `<span class="pill ok">已确认</span>`;
+    else if (mode === "archived" || t.status === "archived")
+      side = `<span class="muted small">已存档</span>`;
+    else if (t.handoverId) side = `<span class="muted small">看交接</span>`;
     return `<div class="deal-row" role="button" tabindex="0" data-open="${esc(t.id)}" style="${
       readonly ? "opacity:.75;cursor:default" : "cursor:pointer"
     }">
@@ -346,7 +347,7 @@ export async function activate({ account, url, root }) {
           <div class="deal-why">${esc(plainDiff(t.diff))}</div>
         </div>
       </div>
-      <div class="deal-side"><span class="deal-go">${goLabel}</span></div>
+      <div class="deal-side">${side}</div>
     </div>`;
   }
 

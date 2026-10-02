@@ -35,17 +35,6 @@
   gap: 10px;
   flex-shrink: 0;
 }
-.brand .sep {
-  opacity: 0.35;
-  font-weight: 400;
-}
-.brand .env {
-  font-size: 11px;
-  font-weight: 500;
-  opacity: 0.75;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 1px 6px;
-}
 
 /* TOP 主菜单：系统级 App */
 .main-menu {
@@ -86,13 +75,6 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
-}
-.who {
-  font-size: 12px;
-  opacity: 0.9;
-}
-.who strong {
-  font-weight: 600;
 }
 
 .topbar .btn {
@@ -300,6 +282,30 @@ body.status-muted .status-rail.show {
   border-radius: var(--radius);
   padding: 6px 8px;
   font-size: 12px;
+}
+
+.user-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+.user-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+.user-menu-btn #who-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 12px;
+}
+.user-menu-btn .chev {
+  opacity: 0.7;
+  font-size: 10px;
 }
 
 .account-menu {

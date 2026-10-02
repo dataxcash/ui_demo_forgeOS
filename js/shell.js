@@ -1,14 +1,14 @@
-import { esc } from "./esc.js?v=nav46";
-import { loadI18n, t } from "./i18n.js?v=nav46";
+import { esc } from "./esc.js?v=nav47";
+import { loadI18n, t } from "./i18n.js?v=nav47";
 import {
   loadAccounts,
   setAccountId,
   clearAccount,
   homeFor,
   resolveNav,
-} from "./session.js?v=nav46";
-import { getStatus, askCopilot } from "./api-mock.js?v=nav46";
-import { confirmDialog } from "./confirm.js?v=nav46";
+} from "./session.js?v=nav47";
+import { getStatus, askCopilot } from "./api-mock.js?v=nav47";
+import { confirmDialog } from "./confirm.js?v=nav47";
 
 const STATUS_MUTE_APPS = new Set(["aitools", "ingest"]);
 
@@ -35,7 +35,7 @@ export async function ensureShell(account, active) {
 /** @deprecated 兼容旧页；请用 ensureShell + startPage */
 export async function mountShell({ account, active }) {
   await ensureShell(account, active);
-  const { installSoftNav } = await import("./soft-nav.js?v=nav46");
+  const { installSoftNav } = await import("./soft-nav.js?v=nav47");
   installSoftNav();
 }
 
@@ -52,7 +52,7 @@ export async function refreshShellChrome(account, active) {
   );
 
   const who = document.getElementById("who-name");
-  if (who) who.textContent = `${account.name} · ${account.title}`;
+  if (who) who.textContent = account.name;
 
   const mainMenu = document.getElementById("main-menu");
   if (mainMenu) {
@@ -126,15 +126,15 @@ async function buildShellDom(account, active) {
         <div class="topbar-left">
           <div class="brand">
             <span>${esc(t("app.name"))}</span>
-            <span class="sep">|</span>
-            <span class="env">${esc(t("app.env"))}</span>
           </div>
           <nav class="main-menu" id="main-menu" aria-label="主菜单"></nav>
         </div>
         <div class="topbar-right">
           <button type="button" class="btn" id="btn-copilot">${esc(t("nav.copilot"))}</button>
-          <div class="who"><strong id="who-name"></strong></div>
-          <button type="button" class="btn" id="btn-switch">${esc(t("nav.switchAccount"))}</button>
+          <button type="button" class="btn user-menu-btn" id="btn-user" aria-haspopup="true" aria-expanded="false">
+            <span id="who-name"></span>
+            <span class="chev" aria-hidden="true">▾</span>
+          </button>
         </div>
       </header>
       <div class="account-menu" id="account-menu"></div>
@@ -190,15 +190,19 @@ function wireShellChrome(account, active) {
       `<div class="hint">${esc(t("account.hint"))}</div>
      <button type="button" data-id="__logout">${esc(t("nav.logout"))}</button>`;
 
-    document.getElementById("btn-switch").onclick = () => {
-      menu.classList.toggle("show");
+    document.getElementById("btn-user").onclick = (e) => {
+      e.stopPropagation();
+      const open = menu.classList.toggle("show");
+      document.getElementById("btn-user").setAttribute("aria-expanded", open ? "true" : "false");
     };
     document.addEventListener("click", (e) => {
       if (
         !menu.contains(e.target) &&
-        e.target !== document.getElementById("btn-switch")
+        e.target !== document.getElementById("btn-user") &&
+        !document.getElementById("btn-user")?.contains(e.target)
       ) {
         menu.classList.remove("show");
+        document.getElementById("btn-user")?.setAttribute("aria-expanded", "false");
       }
     });
     menu.addEventListener("click", async (e) => {
@@ -214,7 +218,7 @@ function wireShellChrome(account, active) {
       if (!acc || acc.stub) return;
       setAccountId(id);
       menu.classList.remove("show");
-      const { softNavigate } = await import("./soft-nav.js?v=nav46");
+      const { softNavigate } = await import("./soft-nav.js?v=nav47");
       shellAccount = acc;
       await softNavigate(new URL(homeFor(acc), location.href), { push: true });
     });
@@ -269,7 +273,7 @@ function wireShellChrome(account, active) {
           if (typeof window.__hrPrefillNormal === "function") {
             window.__hrPrefillNormal();
           } else {
-            const { softNavigate } = await import("./soft-nav.js?v=nav46");
+            const { softNavigate } = await import("./soft-nav.js?v=nav47");
             await softNavigate(new URL("./hr-import.html", location.href), {
               push: true,
             });

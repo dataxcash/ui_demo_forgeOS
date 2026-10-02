@@ -6,9 +6,9 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav46";
-import { confirmDialog } from "../confirm.js?v=nav46";
-import { esc } from "../esc.js?v=nav46";
+} from "../api-mock.js?v=nav47";
+import { confirmDialog } from "../confirm.js?v=nav47";
+import { esc } from "../esc.js?v=nav47";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -38,7 +38,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav46");
+    const { softNavigate } = await import("../soft-nav.js?v=nav47");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -135,7 +135,7 @@ export async function activate({ account, url, root }) {
         )}</span>
       </div>
       <div class="it-svc-tree" id="tree"></div>
-      <h2 class="it-sec-title">夜间作业（资源向）</h2>
+      <h2 class="it-sec-title">夜间作业</h2>
       <table class="table">
         <thead><tr><th>作业</th><th>状态</th><th>开始</th><th>说明</th></tr></thead>
         <tbody id="jobs"></tbody>
@@ -325,13 +325,13 @@ export async function activate({ account, url, root }) {
           </div>
         </div>
 
-        <h2 class="it-sec-title">一、按模型（主口径）</h2>
-        <p class="muted small" style="margin:-4px 0 8px">点选模型查看该模型下的部门拆分与波动。驻留 = 当前在显存里。</p>
+        <h2 class="it-sec-title">一、按模型</h2>
+        <p class="muted small" style="margin:-4px 0 8px">点选模型查看部门拆分与波动。驻留 = 当前在显存里。</p>
         <div class="it-model-list" id="model-list"></div>
 
         <div id="model-detail"></div>
 
-        <h2 class="it-sec-title">二、按部门（次口径 · 今日合计）</h2>
+        <h2 class="it-sec-title">二、按部门（今日合计）</h2>
         <table class="table">
           <thead><tr><th>部门</th><th>今日 Token</th><th>占比</th><th></th></tr></thead>
           <tbody>
