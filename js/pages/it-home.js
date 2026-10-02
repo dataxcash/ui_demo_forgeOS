@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav51";
-import { confirmDialog } from "../confirm.js?v=nav51";
-import { esc } from "../esc.js?v=nav51";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav51";
+} from "../api-mock.js?v=nav52";
+import { confirmDialog } from "../confirm.js?v=nav52";
+import { esc } from "../esc.js?v=nav52";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav52";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav51");
+    const { softNavigate } = await import("../soft-nav.js?v=nav52");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -517,7 +517,7 @@ export async function activate({ account, url, root }) {
         ${headHtml(
           "it-compute",
           "算力与 GPU",
-          `${c.note || ""} 截至 ${c.asOf || ""}。`
+          `Usage & Capacity · 截至 ${c.asOf || ""}`
         )}
 
         <h2 class="it-sec-title">${esc(cap.title || "静态能力 / 容量")}</h2>
@@ -550,51 +550,43 @@ export async function activate({ account, url, root }) {
           ${capMetric("NPU 算力", npu)}
         </div>
 
-        <div class="grid-2" style="margin-top:14px">
-          <div class="card">
-            <div class="dash-k">算力服务</div>
-            <p style="margin:6px 0 0">
-              <span class="pill ok">${esc(c.computeService.status)}</span>
-              · 约 ${esc(String(c.computeService.qps))} 问/秒
-              · 排队 ${esc(String(c.computeService.queue))}
-              · REQ/S ${esc(String(c.computeService.reqPerSec ?? c.computeService.qps))}
-            </p>
-          </div>
-          <div class="card">
-            <div class="it-svc-row">
-              <div>
-                <div class="dash-k">全模型合计 · 今日 Token</div>
-                <div class="stat">${fmtNum(c.tokenA.todayUsed)}
-                  <span class="stat-label">/ ${fmtNum(c.tokenA.todayQuota)}</span></div>
-                <p class="muted small" style="margin:4px 0 0">配额已用 ${pct}%
-                  · <span class="it-trend ${overallTrend.cls}">${esc(
-                    overallTrend.text
-                  )}</span>
-                  · 较昨日 ${esc(overallSpark.deltaTxt)}</p>
-              </div>
-              <div class="it-spark-wrap" title="近 14 日合计消耗">${overallSpark.svg}</div>
+        <div class="card" style="margin-top:14px">
+          <div class="it-svc-row">
+            <div>
+              <div class="dash-k">全模型合计 · 今日 Token</div>
+              <div class="stat">${fmtNum(c.tokenA.todayUsed)}
+                <span class="stat-label">/ ${fmtNum(c.tokenA.todayQuota)}</span></div>
+              <p class="muted small" style="margin:4px 0 0">配额已用 ${pct}%
+                · <span class="it-trend ${overallTrend.cls}">${esc(
+                  overallTrend.text
+                )}</span>
+                · 较昨日 ${esc(overallSpark.deltaTxt)}</p>
             </div>
-            <div class="it-bar"><i style="width:${pct}%"></i></div>
+            <div class="it-spark-wrap" title="近 14 日合计消耗">${overallSpark.svg}</div>
           </div>
+          <div class="it-bar"><i style="width:${pct}%"></i></div>
         </div>
 
         <h2 class="it-sec-title">一、按模型</h2>
-        <p class="muted small" style="margin:-4px 0 8px">点选模型查看部门拆分与波动。驻留 = 当前在显存里。</p>
+        <p class="muted small" style="margin:-4px 0 8px">点选查看趋势与部门拆分。驻留 = 当前占显存。</p>
         <div class="it-model-list" id="model-list"></div>
 
         <div id="model-detail"></div>
 
-        <h2 class="it-sec-title">二、按部门（今日合计）</h2>
+        <h2 class="it-sec-title">二、按部门 · Token 用量</h2>
         <table class="table">
-          <thead><tr><th>部门</th><th>今日 Token</th><th>占比</th><th></th></tr></thead>
+          <thead><tr><th>部门</th><th>今日 Token</th><th>占比</th><th>配额</th><th></th></tr></thead>
           <tbody>
             ${(c.byDeptToday || [])
               .map((r) => {
                 const share = Math.round((r.used / total) * 100);
+                const quota =
+                  r.quota != null ? fmtNum(r.quota) : "—";
                 return `<tr>
                   <td>${esc(r.name)}</td>
                   <td>${fmtNum(r.used)}</td>
                   <td>${share}%</td>
+                  <td class="muted">${quota}</td>
                   <td style="min-width:120px"><div class="it-bar"><i style="width:${share}%"></i></div></td>
                 </tr>`;
               })
@@ -602,7 +594,7 @@ export async function activate({ account, url, root }) {
           </tbody>
         </table>
 
-        <h2 class="it-sec-title">GPU 运行</h2>
+        <h2 class="it-sec-title">三、GPU 资源</h2>
         <div id="gpus"></div>`;
 
       root.querySelector("#model-list").innerHTML = models
@@ -624,7 +616,6 @@ export async function activate({ account, url, root }) {
               </div>
               <div class="muted small">今日 ${fmtNum(mod.todayUsed)} Token
                 · ${fmtNum(mod.todayCalls)} 次
-                · 均时 ${mod.avgLatencyMs} ms
                 · 占合计 ${share}%
                 · <span class="it-trend ${tr.cls}">${esc(tr.text)}</span></div>
             </div>
@@ -644,12 +635,15 @@ export async function activate({ account, url, root }) {
               <div>
                 <div class="dash-k">当前模型</div>
                 <strong style="font-size:16px">${esc(m.name)}</strong>
+                <span class="pill ${m.resident ? "ok" : ""}" style="margin-left:8px">${
+                  m.resident ? "驻留" : "按需"
+                }</span>
                 <p class="muted small" style="margin:4px 0 0">${esc(tr.text)}
                   · 14 日峰值 ${fmtNum(sp.max)} · 较昨日 ${esc(sp.deltaTxt)}</p>
               </div>
               <div class="it-spark-wrap">${sp.svg}</div>
             </div>
-            <h3 class="it-sec-title" style="margin-top:12px">该模型 · 近 14 日</h3>
+            <h3 class="it-sec-title" style="margin-top:12px">该模型 · 近 14 日用量</h3>
             <div class="it-hist-bars" title="每日 Token">
               ${days
                 .map((d) => {
@@ -700,27 +694,24 @@ export async function activate({ account, url, root }) {
 
       root.querySelector("#gpus").innerHTML = (c.gpu || [])
         .map((g) => {
-          const us = sparkline(g.utilHistory || [], "util", { w: 200, h: 40 });
-          const ut = trendLabel(g.utilHistory || [], "util");
+          const vramPct = g.vramTotalGb
+            ? Math.round((g.vramUsedGb / g.vramTotalGb) * 100)
+            : 0;
           return `<div class="card">
             <div class="it-svc-row">
               <div>
-                <strong>${esc(g.name)}</strong>
+                <strong>${esc(g.name || g.id)}</strong>
                 <div class="muted small" style="margin-top:4px">驻留：${esc(
                   (g.residentModels || []).join("、") || "—"
                 )}</div>
-                <p class="muted small" style="margin:4px 0 0">利用率波动：
-                  <span class="it-trend ${ut.cls}">${esc(ut.text)}</span>
-                  · 较昨日 ${esc(us.deltaTxt)}</p>
               </div>
-              <div class="it-spark-wrap">${us.svg}</div>
+              <div>
+                <div class="dash-k">显存</div>
+                <div class="it-metric-v" style="font-size:16px">${g.vramUsedGb} / ${g.vramTotalGb} GB</div>
+              </div>
             </div>
-            <div class="it-gpu-grid">
-              <div><span class="dash-k">利用率</span><div class="it-metric-v">${g.util}%</div></div>
-              <div><span class="dash-k">显存</span><div class="it-metric-v">${g.vramUsedGb} / ${g.vramTotalGb} GB</div></div>
-              <div><span class="dash-k">温度</span><div class="it-metric-v">${g.tempC}°C</div></div>
-              <div><span class="dash-k">功耗</span><div class="it-metric-v">${g.powerW} W</div></div>
-            </div>
+            <div class="it-bar" style="margin-top:10px"><i style="width:${vramPct}%"></i></div>
+            <p class="muted small" style="margin:6px 0 0">已用 ${vramPct}%</p>
           </div>`;
         })
         .join("");
