@@ -1011,8 +1011,7 @@ export async function getIt() {
   await delay();
   const services = await loadJson("../mock/it/services.json");
   return {
-    layers: await loadJson("../mock/it/layers.json"),
-    jobs: services.jobs || (await loadJson("../mock/it/jobs-a.json")),
+    jobs: services.jobs || [],
     dashboard: await loadJson("../mock/it/dashboard.json"),
     services,
     compute: await loadJson("../mock/it/compute.json"),
@@ -1172,7 +1171,7 @@ export async function askCopilot({ account, question, pageKey }) {
       ]),
       actions: [
         { id: "go-dash", label: "运行状态", href: "./it-home.html?view=dashboard" },
-        { id: "go-svc", label: "服务层次", href: "./it-home.html?view=services" },
+        { id: "go-svc", label: "服务状态", href: "./it-home.html?view=services" },
         { id: "go-remote", label: "远程机器", href: "./it-home.html?view=remote" },
       ],
     };

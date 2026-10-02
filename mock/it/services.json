@@ -1,67 +1,98 @@
 {
-  "readyGate": "已放行",
-  "note": "存储服务就绪后，下游才允许启动。上层未就绪时，下层不能强开。",
-  "layers": [
+  "asOf": "2026-10-02 19:55",
+  "domains": [
     {
-      "id": "storaged",
-      "name": "存储服务",
-      "role": "第一层 · 水电煤",
-      "status": "就绪",
-      "detail": "三方对账通过（宣言 / 台账 / 盘面一致）",
-      "canRestart": true,
-      "children": [
+      "id": "storage",
+      "title": "存储",
+      "services": [
+        {
+          "id": "storaged",
+          "name": "storaged",
+          "status": "运行中",
+          "detail": "对象库与台账一致",
+          "canRestart": true
+        }
+      ]
+    },
+    {
+      "id": "inference",
+      "title": "推理",
+      "services": [
         {
           "id": "gateway",
           "name": "算力网关",
-          "role": "下游",
           "status": "运行中",
-          "detail": "推理入口正常",
+          "detail": "推理入口",
           "canRestart": true
         },
         {
           "id": "engine",
           "name": "推理引擎",
-          "role": "下游",
           "status": "运行中",
           "detail": "显存驻留 2 个模型",
+          "dependsOn": ["gateway"],
           "canRestart": true
-        },
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "知识 / 数据",
+      "services": [
         {
           "id": "aispace-api",
           "name": "aispace",
-          "role": "下游",
           "status": "运行中",
-          "detail": "业务工作台后端 · API 正常",
+          "detail": "业务工作台后端 · API",
           "canRestart": true
         },
         {
           "id": "slimgraphd",
           "name": "slimgraphd",
-          "role": "下游",
           "status": "运行中",
           "detail": "主题谱系 · graph.* UDS",
+          "dependsOn": ["aispace-api"],
           "canRestart": true
         },
         {
           "id": "slimrag",
           "name": "slimRAG",
-          "role": "下游",
           "status": "运行中",
-          "detail": "切段检索入库正常",
+          "detail": "切段检索入库",
+          "dependsOn": ["aispace-api"],
+          "canRestart": true
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "审计",
+      "services": [
+        {
+          "id": "audit-svc",
+          "name": "Audit Service",
+          "status": "运行中",
+          "detail": "审计采集与查询入口",
           "canRestart": true
         },
         {
-          "id": "batch-night",
-          "name": "夜间校验作业",
-          "role": "下游 · 作业",
-          "status": "有失败",
-          "detail": "邮件段抽词：worker 内存不足，已入重试队列",
-          "canRestart": true,
-          "jobId": "J-2202"
+          "id": "audit-writer",
+          "name": "Audit Writer",
+          "status": "运行中",
+          "detail": "审计事件写入 Sink",
+          "dependsOn": ["audit-svc"],
+          "canRestart": true
         }
       ]
     }
   ],
+  "audit": {
+    "serviceStatus": "运行中",
+    "writeStatus": "正常",
+    "backlog": 0,
+    "lastWriteAt": "2026-10-02 19:54:32",
+    "storeStatus": "正常"
+  },
   "jobs": [
     {
       "id": "J-2201",

@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav50";
-import { confirmDialog } from "../confirm.js?v=nav50";
-import { esc } from "../esc.js?v=nav50";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav50";
+} from "../api-mock.js?v=nav51";
+import { confirmDialog } from "../confirm.js?v=nav51";
+import { esc } from "../esc.js?v=nav51";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav51";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav50");
+    const { softNavigate } = await import("../soft-nav.js?v=nav51");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -63,7 +63,8 @@ export async function activate({ account, url, root }) {
 
   function overallClass(s) {
     if (s === "就绪" || s === "正常") return "ok";
-    if (s === "未就绪" || s === "失败" || s === "掉线") return "danger";
+    if (s === "未就绪" || s === "失败" || s === "掉线" || s === "异常")
+      return "danger";
     return "warn";
   }
 
@@ -277,70 +278,122 @@ export async function activate({ account, url, root }) {
   }
 
   async function paintServices() {
-    document.title = "服务 · 系统管理";
+    document.title = "服务状态 · 系统管理";
     const s = await getItServices();
+    const domains = s.domains || [];
+    const all = domains.flatMap((d) => d.services || []);
+    const nameById = Object.fromEntries(all.map((x) => [x.id, x.name]));
+    const nRun = all.filter((x) => svcOk(x.status)).length;
+    const nBad = all.filter((x) => svcBad(x.status)).length;
+    const nDeg = all.filter((x) => !svcOk(x.status) && !svcBad(x.status)).length;
+    const platform =
+      nBad > 0 ? "异常" : nDeg > 0 ? "降级" : "正常";
+    const audit = s.audit || {};
+
     root.innerHTML = `
       <div class="flash" id="flash"></div>
-      ${headHtml("it-services", "服务层次", s.note || "")}
-      <div class="it-gate card">
-        <span class="dash-k">就绪门</span>
-        <span class="pill ${overallClass(s.readyGate === "已放行" ? "正常" : "未就绪")}">${esc(
-          s.readyGate
-        )}</span>
+      ${headHtml(
+        "it-services",
+        "服务状态",
+        `Runtime & Dependencies · 截至 ${s.asOf || ""}`
+      )}
+
+      <div class="it-res-row it-svc-summary">
+        <div class="it-res-strip">
+          <div class="it-res">
+            <span class="dash-k">平台状态</span>
+            <strong><span class="pill ${overallClass(platform)}">${esc(
+              platform
+            )}</span></strong>
+          </div>
+          <div class="it-res"><span class="dash-k">运行中</span><strong>${nRun}</strong></div>
+          <div class="it-res"><span class="dash-k">异常</span><strong>${nBad}</strong></div>
+          <div class="it-res"><span class="dash-k">降级</span><strong>${nDeg}</strong></div>
+        </div>
       </div>
-      <div class="it-svc-tree" id="tree"></div>
-      <h2 class="it-sec-title">夜间作业</h2>
+
+      <h2 class="it-sec-title">CORE RUNTIME</h2>
+      <div class="it-svc-domains" id="domains"></div>
+
+      <h2 class="it-sec-title">AUDIT</h2>
+      <div class="it-kpi-row it-audit-kpi">
+        <div class="it-kpi">
+          <div class="dash-k">审计服务</div>
+          <div class="it-metric-v" style="font-size:16px">
+            <span class="pill ${statusPill(audit.serviceStatus)}">${esc(
+              audit.serviceStatus || "—"
+            )}</span>
+          </div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">写入</div>
+          <div class="it-metric-v" style="font-size:16px">
+            <span class="pill ${statusPill(audit.writeStatus)}">${esc(
+              audit.writeStatus || "—"
+            )}</span>
+          </div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">积压</div>
+          <div class="it-metric-v">${audit.backlog ?? "—"}</div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">最近写入</div>
+          <div class="it-metric-v" style="font-size:15px">${esc(
+            audit.lastWriteAt || "—"
+          )}</div>
+        </div>
+        <div class="it-kpi">
+          <div class="dash-k">审计存储</div>
+          <div class="it-metric-v" style="font-size:16px">
+            <span class="pill ${statusPill(audit.storeStatus)}">${esc(
+              audit.storeStatus || "—"
+            )}</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="it-sec-title">SCHEDULED JOBS</h2>
       <table class="table">
         <thead><tr><th>作业</th><th>状态</th><th>开始</th><th>说明</th></tr></thead>
         <tbody id="jobs"></tbody>
       </table>`;
 
-    const tree = root.querySelector("#tree");
-    tree.innerHTML = (s.layers || [])
-      .map((layer) => {
-        const kids = (layer.children || [])
-          .map(
-            (c) => `<div class="it-svc-child card">
-            <div class="it-svc-row">
-              <div>
-                <strong>${esc(c.name)}</strong>
-                <span class="muted small"> · ${esc(c.role)}</span>
-                <div class="muted small" style="margin-top:4px">${esc(c.detail)}</div>
-              </div>
-              <div class="it-svc-actions">
+    const domainsEl = root.querySelector("#domains");
+    domainsEl.innerHTML = domains
+      .map((d) => {
+        const rows = (d.services || [])
+          .map((c) => {
+            const deps = (c.dependsOn || [])
+              .map((id) => nameById[id] || id)
+              .join("、");
+            return `<div class="it-svc-row-lite" data-svc="${esc(c.id)}">
+              <div class="it-svc-row-main">
                 <span class="pill ${statusPill(c.status)}">${esc(c.status)}</span>
+                <strong>${esc(c.name)}</strong>
                 ${
-                  c.canRestart
-                    ? `<button type="button" class="btn" data-restart="${esc(c.id)}">重启</button>`
+                  deps
+                    ? `<span class="muted small">依赖 ${esc(deps)}</span>`
                     : ""
                 }
-              </div>
-            </div>
-          </div>`
-          )
-          .join("");
-        return `<div class="it-svc-layer">
-          <div class="it-svc-parent card">
-            <div class="it-svc-row">
-              <div>
-                <div class="dash-k">${esc(layer.role)}</div>
-                <strong style="font-size:16px">${esc(layer.name)}</strong>
-                <div class="muted small" style="margin-top:4px">${esc(layer.detail)}</div>
+                <div class="muted small">${esc(c.detail || "")}</div>
               </div>
               <div class="it-svc-actions">
-                <span class="pill ${statusPill(layer.status)}">${esc(layer.status)}</span>
                 ${
-                  layer.canRestart
+                  c.canRestart
                     ? `<button type="button" class="btn" data-restart="${esc(
-                        layer.id
+                        c.id
                       )}">重启</button>`
                     : ""
                 }
               </div>
-            </div>
-          </div>
-          <div class="it-svc-children">${kids}</div>
-        </div>`;
+            </div>`;
+          })
+          .join("");
+        return `<section class="it-svc-domain">
+          <h3 class="it-svc-domain-title">${esc(d.title)}</h3>
+          ${rows}
+        </section>`;
       })
       .join("");
 
@@ -357,13 +410,13 @@ export async function activate({ account, url, root }) {
       })
       .join("");
 
-    tree.onclick = async (e) => {
+    domainsEl.onclick = async (e) => {
       const btn = e.target.closest("[data-restart]");
       if (!btn) return;
       const id = btn.getAttribute("data-restart");
       const ok = await confirmDialog({
         title: "重启该服务？",
-        body: "重启可能短暂影响相关能力。正在跑的推理一般不受存储层重启影响（优雅降级）。",
+        body: "重启可能短暂影响相关能力。推理请求会按网关策略排队或降级。",
         confirmText: "确认重启",
       });
       if (!ok) return;
@@ -372,11 +425,20 @@ export async function activate({ account, url, root }) {
       flash.textContent = `已提交重启：${id}`;
       flash.classList.add("show");
     };
+
+    function svcOk(st) {
+      return st === "就绪" || st === "运行中" || st === "正常" || st === "成功";
+    }
+    function svcBad(st) {
+      return st === "失败" || st === "有失败" || st === "未就绪" || st === "掉线";
+    }
   }
 
   function statusPill(st) {
-    if (st === "就绪" || st === "运行中" || st === "成功") return "ok";
-    if (st === "失败" || st === "有失败" || st === "未就绪") return "danger";
+    if (st === "就绪" || st === "运行中" || st === "成功" || st === "正常")
+      return "ok";
+    if (st === "失败" || st === "有失败" || st === "未就绪" || st === "掉线")
+      return "danger";
     return "warn";
   }
 

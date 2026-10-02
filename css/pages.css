@@ -1074,10 +1074,52 @@ a.tool-card:hover {
   gap: 10px;
   margin-bottom: 12px;
 }
-.it-svc-tree {
+.it-svc-summary {
+  margin-bottom: 8px;
+}
+.it-svc-domains {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.it-svc-domain-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+.it-svc-row-lite {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.it-svc-domain .it-svc-row-lite:last-child {
+  border-bottom: 0;
+}
+.it-svc-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  min-width: 0;
+}
+.it-svc-row-main .muted.small {
+  flex-basis: 100%;
+  margin: 0;
+}
+.it-audit-kpi {
+  grid-template-columns: repeat(5, 1fr);
+}
+@media (max-width: 960px) {
+  .it-audit-kpi {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 .it-svc-layer {
   border-left: 3px solid var(--accent);

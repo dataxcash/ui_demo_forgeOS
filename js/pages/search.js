@@ -1,5 +1,5 @@
-import { getSearchHits } from "../api-mock.js?v=nav50";
-import { esc } from "../esc.js?v=nav50";
+import { getSearchHits } from "../api-mock.js?v=nav51";
+import { esc } from "../esc.js?v=nav51";
 
 export const roles = ["employee", "manager"];
 export const active = "search";
