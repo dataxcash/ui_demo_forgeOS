@@ -1,57 +1,57 @@
 {
   "asOf": "2026-10-02 19:55",
-  "note": "Audit Integrity & Trace：Observe → Verify → Recover/Replay → Preserve。",
-  "fabric": {
-    "overall": "Healthy",
-    "coveragePct": 100,
-    "lagSec": 0.8,
-    "backlog": 0,
-    "mismatch": 0,
-    "chains": [
-      { "id": "sovProbe", "label": "sovProbe", "status": "Healthy", "detail": "8 / 8" },
-      { "id": "shadow", "label": "Shadow Engine", "status": "Healthy", "detail": "3 / 3" },
-      { "id": "wal", "label": "WAL / REDO", "status": "Healthy", "detail": "Healthy" },
-      { "id": "vault", "label": "sovVault", "status": "Healthy", "detail": "Healthy" }
-    ]
+  "note": "三轨并列：本地推理 / 外发 LLM / 内部系统。非串联流水线；Correlation 只表示跨轨关联能力。",
+  "coverage": {
+    "status": "Normal",
+    "label": "Audit coverage"
   },
-  "integrity": {
-    "coveragePct": 100,
-    "shadowLagMs": 42,
-    "redoLagSec": 0.4,
-    "backlog": 0,
-    "mismatch": 0,
-    "shadowIntegrity": "NORMAL"
+  "tracks": {
+    "localInference": {
+      "id": "local",
+      "titleZh": "本地推理审计",
+      "titleEn": "Local Inference Audit",
+      "impl": "Shadow Engine",
+      "status": "Healthy",
+      "observed": 12482,
+      "recorded": 12471,
+      "pending": 11,
+      "shadowLagMs": 42,
+      "showMismatch": false
+    },
+    "externalLlm": {
+      "id": "external",
+      "titleZh": "外发 LLM 审计",
+      "titleEn": "External LLM Audit",
+      "impl": "sovProbe · sovVault",
+      "status": "Healthy",
+      "requestsObserved": 3841,
+      "captureCoveragePct": 100,
+      "eventsPerSec": 1842,
+      "dropped": 0,
+      "writeLagSec": 0.8,
+      "vaultUsedTb": 4.2,
+      "vaultTotalTb": 8,
+      "lastCommitAt": "2026-10-02 19:55:02"
+    },
+    "internalSystem": {
+      "id": "internal",
+      "titleZh": "内部系统审计",
+      "titleEn": "Internal System Audit",
+      "impl": "SQLite WAL",
+      "status": "Healthy",
+      "walPosition": "8F31:7A2C",
+      "walSizeMb": 128.4,
+      "redoLagSec": 0.4,
+      "replayBacklog": 0,
+      "lastCheckpointAt": "2026-10-02 19:50:00",
+      "integrity": "Verified"
+    }
   },
-  "probes": {
-    "nodesCovered": 8,
-    "nodesTotal": 8,
-    "active": 7,
-    "degraded": 1,
-    "eventsPerSec": 1842,
-    "deliveryLagSec": 0.8,
-    "dropped": 0,
-    "note": "与远程机队发现面对齐：已发现主机上的审计探针有效性。"
-  },
-  "shadow": {
-    "integrity": "NORMAL",
-    "requestsObserved": 12482,
-    "verified": 12471,
-    "pending": 11,
-    "mismatch": 0,
-    "lagMs": 42
-  },
-  "wal": {
-    "position": "8F31:7A2C",
-    "redoLagSec": 0.4,
-    "replayBacklog": 0,
-    "analysis": "Normal"
-  },
-  "vault": {
-    "usedTb": 4.2,
-    "totalTb": 8,
-    "writeStatus": "Normal",
-    "integrity": "Verified",
-    "lastCommitAt": "2026-10-02 19:55:02"
+  "correlation": {
+    "requestIdCoveragePct": 99.8,
+    "crossTrackMatched": 12481,
+    "unmatched": 3,
+    "disclaimer": "Cross-track correlation · not an audit path"
   },
   "identity": {
     "account": "sov-audit",

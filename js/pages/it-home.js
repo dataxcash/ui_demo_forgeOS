@@ -7,10 +7,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav56";
-import { confirmDialog } from "../confirm.js?v=nav56";
-import { esc } from "../esc.js?v=nav56";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav56";
+} from "../api-mock.js?v=nav57";
+import { confirmDialog } from "../confirm.js?v=nav57";
+import { esc } from "../esc.js?v=nav57";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav57";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -49,7 +49,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav56");
+    const { softNavigate } = await import("../soft-nav.js?v=nav57");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -471,25 +471,54 @@ export async function activate({ account, url, root }) {
   async function paintAudit() {
     document.title = "审计 · 系统管理";
     const a = await getItAudit();
-    const fabric = a.fabric || {};
-    const integ = a.integrity || {};
-    const probes = a.probes || {};
-    const shadow = a.shadow || {};
-    const wal = a.wal || {};
-    const vault = a.vault || {};
+    const tracks = a.tracks || {};
+    const local = tracks.localInference || {};
+    const external = tracks.externalLlm || {};
+    const internal = tracks.internalSystem || {};
+    const corr = a.correlation || {};
     const ident = a.identity || {};
+    const coverage = a.coverage || {};
 
     function healthPill(st) {
       const s = String(st || "");
       if (/healthy|normal|verified|enabled|ok/i.test(s) || s === "正常")
         return "ok";
-      if (/fail|error|mismatch|critical/i.test(s)) return "danger";
+      if (/fail|error|mismatch|critical|degraded/i.test(s)) return "danger";
       return "warn";
     }
 
-    const vaultPct = vault.totalTb
-      ? Math.round((Number(vault.usedTb) / Number(vault.totalTb)) * 100)
-      : 0;
+    function fmtNum(n) {
+      if (n == null || n === "") return "—";
+      return Number(n).toLocaleString("en-US");
+    }
+
+    function metric(label, value, unit) {
+      return `<div class="it-audit-metric">
+        <div class="dash-k">${esc(label)}</div>
+        <div class="it-audit-metric-v">${value}${
+          unit ? ` <span class="muted small">${esc(unit)}</span>` : ""
+        }</div>
+      </div>`;
+    }
+
+    const vaultPct =
+      external.vaultTotalTb != null
+        ? Math.round(
+            (Number(external.vaultUsedTb) / Number(external.vaultTotalTb)) * 100
+          )
+        : 0;
+    const lastCommit = (external.lastCommitAt || "").replace(
+      /^\d{4}-\d{2}-\d{2}\s*/,
+      ""
+    );
+    const lastCkpt = (internal.lastCheckpointAt || "").replace(
+      /^\d{4}-\d{2}-\d{2}\s*/,
+      ""
+    );
+
+    const mismatchHtml = local.showMismatch
+      ? metric("Mismatch", esc(String(local.mismatch ?? 0)))
+      : "";
 
     root.innerHTML = `
       ${headHtml(
@@ -498,173 +527,130 @@ export async function activate({ account, url, root }) {
         `Audit Integrity & Trace · 截至 ${a.asOf || ""}`
       )}
 
-      <section class="it-audit-fabric" aria-label="Audit Fabric">
-        <div class="it-env-label">Audit Fabric</div>
-        <div class="it-audit-chain">
-          ${(fabric.chains || [])
-            .map(
-              (c, i) => `
-            <div class="it-audit-chain-node">
-              <span class="pill ${healthPill(c.status)}">${esc(
-                c.status
-              )}</span>
-              <strong>${esc(c.label)}</strong>
-              <span class="muted small">${esc(c.detail || "")}</span>
-            </div>
-            ${
-              i < (fabric.chains || []).length - 1
-                ? `<div class="it-audit-chain-arrow" aria-hidden="true">↓</div>`
-                : ""
-            }`
-            )
-            .join("")}
-        </div>
-        <div class="it-env-metrics" style="border-bottom:0; margin-bottom:0">
-          <div class="it-env-metric">Coverage · <strong>${esc(
-            String(fabric.coveragePct ?? integ.coveragePct ?? "—")
-          )}%</strong></div>
-          <div class="it-env-metric">Lag · <strong>${esc(
-            String(fabric.lagSec ?? "—")
-          )} s</strong></div>
-          <div class="it-env-metric">Backlog · <strong>${esc(
-            String(fabric.backlog ?? 0)
-          )}</strong></div>
-          <div class="it-env-metric">Mismatch · <strong>${esc(
-            String(fabric.mismatch ?? integ.mismatch ?? 0)
-          )}</strong></div>
-        </div>
-      </section>
+      <div class="it-audit-coverage">
+        <span class="dash-k">${esc(coverage.label || "Audit coverage")}</span>
+        <span class="pill ${healthPill(coverage.status)}">${esc(
+          coverage.status || "—"
+        )}</span>
+        <span class="muted small">三轨健康状态聚合 · 非流水线</span>
+      </div>
 
-      <section class="it-audit-grid">
-        <div class="it-audit-panel">
-          <div class="it-env-label">Integrity</div>
-          <div class="it-kpi-row" style="border:0; padding:0; margin:0">
-            <div class="it-kpi">
-              <div class="dash-k">Shadow Integrity</div>
-              <div class="it-metric-v" style="font-size:15px">
-                <span class="pill ${healthPill(
-                  integ.shadowIntegrity || shadow.integrity
-                )}">${esc(integ.shadowIntegrity || shadow.integrity || "—")}</span>
+      <section class="it-audit-tracks" aria-label="三轨审计">
+        <article class="it-audit-track" data-track="local">
+          <div class="it-audit-track-head">
+            <div>
+              <div class="it-env-label">${esc(local.titleEn || "Local Inference Audit")}</div>
+              <h3 class="it-audit-track-title">${esc(
+                local.titleZh || "本地推理审计"
+              )}</h3>
+              <div class="muted small">${esc(local.impl || "Shadow Engine")}</div>
+            </div>
+            <span class="pill ${healthPill(local.status)}">${esc(
+              local.status || "—"
+            )}</span>
+          </div>
+          <div class="it-audit-metrics">
+            ${metric("Observed", esc(fmtNum(local.observed)))}
+            ${metric("Recorded", esc(fmtNum(local.recorded)))}
+            ${metric("Pending", esc(fmtNum(local.pending)))}
+            ${metric("Shadow lag", esc(String(local.shadowLagMs ?? "—")), "ms")}
+            ${mismatchHtml}
+          </div>
+        </article>
+
+        <article class="it-audit-track" data-track="external">
+          <div class="it-audit-track-head">
+            <div>
+              <div class="it-env-label">${esc(external.titleEn || "External LLM Audit")}</div>
+              <h3 class="it-audit-track-title">${esc(
+                external.titleZh || "外发 LLM 审计"
+              )}</h3>
+              <div class="muted small">${esc(
+                external.impl || "sovProbe · sovVault"
+              )}</div>
+            </div>
+            <span class="pill ${healthPill(external.status)}">${esc(
+              external.status || "—"
+            )}</span>
+          </div>
+          <div class="it-audit-metrics">
+            ${metric("Requests observed", esc(fmtNum(external.requestsObserved)))}
+            ${metric(
+              "Capture coverage",
+              esc(String(external.captureCoveragePct ?? "—")),
+              "%"
+            )}
+            ${metric("Events/s", esc(fmtNum(external.eventsPerSec)))}
+            ${metric("Dropped", esc(fmtNum(external.dropped)))}
+            ${metric("Write lag", esc(String(external.writeLagSec ?? "—")), "s")}
+            ${metric(
+              "Vault used",
+              `${esc(String(external.vaultUsedTb ?? "—"))} / ${esc(
+                String(external.vaultTotalTb ?? "—")
+              )}`,
+              "TB"
+            )}
+            ${metric("Last commit", esc(lastCommit || "—"))}
+          </div>
+          <div class="it-bar" style="margin-top:10px" title="sovVault capacity">
+            <i style="width:${vaultPct}%"></i>
+          </div>
+        </article>
+
+        <article class="it-audit-track" data-track="internal">
+          <div class="it-audit-track-head">
+            <div>
+              <div class="it-env-label">${esc(
+                internal.titleEn || "Internal System Audit"
+              )}</div>
+              <h3 class="it-audit-track-title">${esc(
+                internal.titleZh || "内部系统审计"
+              )}</h3>
+              <div class="muted small">${esc(internal.impl || "SQLite WAL")}</div>
+            </div>
+            <span class="pill ${healthPill(internal.status)}">${esc(
+              internal.status || "—"
+            )}</span>
+          </div>
+          <div class="it-audit-metrics">
+            ${metric("WAL position", esc(internal.walPosition || "—"))}
+            ${metric("WAL size", esc(String(internal.walSizeMb ?? "—")), "MB")}
+            ${metric("Redo lag", esc(String(internal.redoLagSec ?? "—")), "s")}
+            ${metric("Replay backlog", esc(fmtNum(internal.replayBacklog)))}
+            ${metric("Last checkpoint", esc(lastCkpt || "—"))}
+            <div class="it-audit-metric">
+              <div class="dash-k">Integrity</div>
+              <div class="it-audit-metric-v">
+                <span class="pill ${healthPill(internal.integrity)}">${esc(
+                  internal.integrity || "—"
+                )}</span>
               </div>
             </div>
-            <div class="it-kpi">
-              <div class="dash-k">Shadow lag</div>
-              <div class="it-metric-v">${esc(
-                String(integ.shadowLagMs ?? shadow.lagMs ?? "—")
-              )} <span class="muted small">ms</span></div>
-            </div>
-            <div class="it-kpi">
-              <div class="dash-k">Redo lag</div>
-              <div class="it-metric-v">${esc(
-                String(integ.redoLagSec ?? wal.redoLagSec ?? "—")
-              )} <span class="muted small">s</span></div>
-            </div>
-            <div class="it-kpi">
-              <div class="dash-k">Backlog</div>
-              <div class="it-metric-v">${esc(
-                String(integ.backlog ?? 0)
-              )}</div>
-            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="it-audit-corr" aria-label="Correlation">
+        <div class="it-audit-track-head" style="margin-bottom:8px">
+          <div>
+            <div class="it-env-label">Correlation</div>
+            <p class="muted small" style="margin:4px 0 0">${esc(
+              corr.disclaimer ||
+                "Cross-track correlation · not an audit path"
+            )}</p>
           </div>
         </div>
-
-        <div class="it-audit-panel">
-          <div class="it-env-label">sovProbe</div>
-          <div class="it-res-strip" style="margin-bottom:8px">
-            <div class="it-res"><span class="dash-k">覆盖</span><strong>${esc(
-              String(probes.nodesCovered ?? "—")
-            )} / ${esc(String(probes.nodesTotal ?? "—"))}</strong></div>
-            <div class="it-res"><span class="dash-k">active</span><strong>${esc(
-              String(probes.active ?? "—")
-            )}</strong></div>
-            <div class="it-res"><span class="dash-k">degraded</span><strong>${esc(
-              String(probes.degraded ?? 0)
-            )}</strong></div>
-          </div>
-          <div class="it-env-metrics" style="border:0; padding:0; margin:0">
-            <div class="it-env-metric">events/s · <strong>${esc(
-              Number(probes.eventsPerSec || 0).toLocaleString("en-US")
-            )}</strong></div>
-            <div class="it-env-metric">delivery lag · <strong>${esc(
-              String(probes.deliveryLagSec ?? "—")
-            )} s</strong></div>
-            <div class="it-env-metric">dropped · <strong>${esc(
-              String(probes.dropped ?? 0)
-            )}</strong></div>
-          </div>
-          <p class="muted small" style="margin:10px 0 0">${esc(
-            probes.note || ""
-          )}</p>
-        </div>
-
-        <div class="it-audit-panel it-audit-shadow">
-          <div class="it-env-label">Shadow Engine</div>
-          <div class="it-kpi-row" style="border:0; padding:0; margin:0">
-            <div class="it-kpi">
-              <div class="dash-k">Observed</div>
-              <div class="it-metric-v">${esc(
-                Number(shadow.requestsObserved || 0).toLocaleString("en-US")
-              )}</div>
-            </div>
-            <div class="it-kpi">
-              <div class="dash-k">Verified</div>
-              <div class="it-metric-v">${esc(
-                Number(shadow.verified || 0).toLocaleString("en-US")
-              )}</div>
-            </div>
-            <div class="it-kpi">
-              <div class="dash-k">Pending</div>
-              <div class="it-metric-v">${esc(String(shadow.pending ?? 0))}</div>
-            </div>
-            <div class="it-kpi">
-              <div class="dash-k">Mismatch</div>
-              <div class="it-metric-v">${esc(
-                String(shadow.mismatch ?? 0)
-              )}</div>
-            </div>
-            <div class="it-kpi">
-              <div class="dash-k">Shadow lag</div>
-              <div class="it-metric-v">${esc(String(shadow.lagMs ?? "—"))}
-                <span class="muted small">ms</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="it-audit-panel">
-          <div class="it-env-label">WAL / REDO</div>
-          <div class="it-env-metrics" style="border:0; padding:0; margin:0 0 10px">
-            <div class="it-env-metric">WAL position · <strong>${esc(
-              wal.position || "—"
-            )}</strong></div>
-            <div class="it-env-metric">Redo lag · <strong>${esc(
-              String(wal.redoLagSec ?? "—")
-            )} s</strong></div>
-            <div class="it-env-metric">Replay backlog · <strong>${esc(
-              String(wal.replayBacklog ?? 0)
-            )}</strong></div>
-            <div class="it-env-metric">Analysis · <strong><span class="pill ${healthPill(
-              wal.analysis
-            )}">${esc(wal.analysis || "—")}</span></strong></div>
-          </div>
-          <div class="it-env-label" style="margin-top:8px">sovVault</div>
-          <div class="it-metric-v" style="font-size:18px; margin:4px 0 6px">
-            ${esc(String(vault.usedTb ?? "—"))} / ${esc(
-              String(vault.totalTb ?? "—")
-            )} TB
-          </div>
-          <div class="it-bar"><i style="width:${vaultPct}%"></i></div>
-          <div class="it-env-metrics" style="border:0; padding:8px 0 0; margin:0">
-            <div class="it-env-metric">Write · <strong><span class="pill ${healthPill(
-              vault.writeStatus
-            )}">${esc(vault.writeStatus || "—")}</span></strong></div>
-            <div class="it-env-metric">Integrity · <strong><span class="pill ${healthPill(
-              vault.integrity
-            )}">${esc(vault.integrity || "—")}</span></strong></div>
-            <div class="it-env-metric">Last commit · <strong>${esc(
-              (vault.lastCommitAt || "").replace(/^\d{4}-\d{2}-\d{2}\s*/, "") ||
-                "—"
-            )}</strong></div>
-          </div>
+        <div class="it-audit-metrics it-audit-corr-metrics">
+          ${metric(
+            "request_id coverage",
+            esc(String(corr.requestIdCoveragePct ?? "—")),
+            "%"
+          )}
+          ${metric(
+            "cross-track matched",
+            esc(fmtNum(corr.crossTrackMatched))
+          )}
+          ${metric("unmatched", esc(fmtNum(corr.unmatched)))}
         </div>
       </section>
 
@@ -678,9 +664,13 @@ export async function activate({ account, url, root }) {
             )}</span>
           </div>
           <div class="muted small">
-            Privilege ${esc(ident.privilege || "—")}
-            · Interactive ${esc(ident.interactive || "—")}
-            · Last rotation ${esc(ident.lastRotation || "—")}
+            ${esc(ident.privilege || "Audit-only")}
+            · Interactive access · ${esc(ident.interactive || "Disabled")}
+            ${
+              ident.lastRotation
+                ? ` · Last rotation ${esc(ident.lastRotation)}`
+                : ""
+            }
           </div>
         </div>
       </section>`;

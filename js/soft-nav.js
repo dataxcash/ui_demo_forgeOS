@@ -1,5 +1,5 @@
-import { resolvePageLoader, canonicalizeUrl } from "./page-registry.js?v=nav56";
-import { ensureShell, getShellAccount, refreshShellChrome } from "./shell.js?v=nav56";
+import { resolvePageLoader, canonicalizeUrl } from "./page-registry.js?v=nav57";
+import { ensureShell, getShellAccount, refreshShellChrome } from "./shell.js?v=nav57";
 
 let installed = false;
 let navigating = false;
@@ -121,7 +121,7 @@ export async function softNavigate(to, { push = true } = {}) {
 
 /** 首屏启动：挂壳 + 激活当前页模块 + 启用软导航 */
 export async function startPage(mod) {
-  const { requireAccount } = await import("./session.js?v=nav56");
+  const { requireAccount } = await import("./session.js?v=nav57");
   const account = await requireAccount();
   if (!account) return;
   if (mod.roles && !mod.roles.includes(account.role)) {

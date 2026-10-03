@@ -1,6 +1,6 @@
 let dict = null;
 
-const I18N_V = "nav56";
+const I18N_V = "nav57";
 
 export async function loadI18n(locale = "zh-CN") {
   const res = await fetch(`../i18n/${locale}.json?v=${I18N_V}`);
