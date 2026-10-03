@@ -36,6 +36,7 @@
   "nav.itServices": "服务状态",
   "nav.itCompute": "算力与 GPU",
   "nav.itAispace": "aiSpace 后端",
+  "nav.itAudit": "审计",
   "nav.itRemote": "远程机器",
   "nav.itStorage": "存储与码头",
   "nav.itHome": "运行状态",

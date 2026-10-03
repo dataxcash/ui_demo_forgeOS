@@ -1031,6 +1031,11 @@ export async function getItServices() {
   return loadJson("../mock/it/services.json");
 }
 
+export async function getItAudit() {
+  await delay();
+  return loadJson("../mock/it/audit.json");
+}
+
 export async function getItCompute() {
   await delay();
   return loadJson("../mock/it/compute.json");
@@ -1172,6 +1177,7 @@ export async function askCopilot({ account, question, pageKey }) {
       actions: [
         { id: "go-dash", label: "运行状态", href: "./it-home.html?view=dashboard" },
         { id: "go-svc", label: "服务状态", href: "./it-home.html?view=services" },
+        { id: "go-audit", label: "审计", href: "./it-home.html?view=audit" },
         { id: "go-remote", label: "远程机器", href: "./it-home.html?view=remote" },
       ],
     };

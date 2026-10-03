@@ -33,6 +33,7 @@ const BY_NAV_KEY = {
   "it-services": "layers",
   "it-compute": "chip",
   "it-aispace": "nodes",
+  "it-audit": "shield",
   "it-remote": "monitor",
   "it-storage": "disk",
   "my-deals": "list",

@@ -1,15 +1,16 @@
 import {
   getItDashboard,
   getItServices,
+  getItAudit,
   getItCompute,
   getItAispaceCap,
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav55";
-import { confirmDialog } from "../confirm.js?v=nav55";
-import { esc } from "../esc.js?v=nav55";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav55";
+} from "../api-mock.js?v=nav56";
+import { confirmDialog } from "../confirm.js?v=nav56";
+import { esc } from "../esc.js?v=nav56";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav56";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -35,6 +36,7 @@ function resolveView(url) {
 export function activeKey(url) {
   const view = resolveView(url);
   if (view === "services") return "it-services";
+  if (view === "audit") return "it-audit";
   if (view === "compute") return "it-compute";
   if (view === "aispace") return "it-aispace";
   if (view === "remote") return "it-remote";
@@ -47,7 +49,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav55");
+    const { softNavigate } = await import("../soft-nav.js?v=nav56");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -55,6 +57,7 @@ export async function activate({ account, url, root }) {
   }
 
   if (view === "services") return paintServices();
+  if (view === "audit") return paintAudit();
   if (view === "compute") return paintCompute();
   if (view === "aispace") return paintAispace();
   if (view === "remote") return paintRemote(q0);
@@ -277,18 +280,45 @@ export async function activate({ account, url, root }) {
     </div>`;
   }
 
+  function svcOk(st) {
+    return st === "就绪" || st === "运行中" || st === "正常" || st === "成功";
+  }
+  function svcBad(st) {
+    return (
+      st === "失败" ||
+      st === "有失败" ||
+      st === "未就绪" ||
+      st === "掉线" ||
+      st === "异常"
+    );
+  }
+
   async function paintServices() {
     document.title = "服务状态 · 系统管理";
     const s = await getItServices();
     const domains = s.domains || [];
     const all = domains.flatMap((d) => d.services || []);
+    const byId = Object.fromEntries(all.map((x) => [x.id, x]));
     const nameById = Object.fromEntries(all.map((x) => [x.id, x.name]));
-    const nRun = all.filter((x) => svcOk(x.status)).length;
+    const nOk = all.filter((x) => svcOk(x.status)).length;
     const nBad = all.filter((x) => svcBad(x.status)).length;
     const nDeg = all.filter((x) => !svcOk(x.status) && !svcBad(x.status)).length;
-    const platform =
-      nBad > 0 ? "异常" : nDeg > 0 ? "降级" : "正常";
-    const audit = s.audit || {};
+    const platform = nBad > 0 ? "异常" : nDeg > 0 ? "降级" : "正常";
+
+    const depEdges = all.flatMap((c) =>
+      (c.dependsOn || []).map((id) => ({ from: c.id, to: id }))
+    );
+    const depOk = depEdges.filter((e) => {
+      const tgt = byId[e.to];
+      return tgt && svcOk(tgt.status);
+    }).length;
+    const depTotal = depEdges.length;
+
+    const jobs = s.jobs || [];
+    const jobRun = jobs.filter((j) => j.status === "跑中" || j.status === "运行中").length;
+    const jobQ = jobs.filter((j) => j.status === "排队").length;
+    const jobFail = jobs.filter((j) => j.status === "失败").length;
+    const jobOk = jobs.filter((j) => j.status === "成功").length;
 
     root.innerHTML = `
       <div class="flash" id="flash"></div>
@@ -298,112 +328,115 @@ export async function activate({ account, url, root }) {
         `Runtime & Dependencies · 截至 ${s.asOf || ""}`
       )}
 
-      <div class="it-res-row it-svc-summary">
-        <div class="it-res-strip">
+      <section class="it-plat" aria-label="Platform">
+        <div class="it-env-label">Platform</div>
+        <div class="it-res-strip it-plat-strip">
           <div class="it-res">
-            <span class="dash-k">平台状态</span>
+            <span class="dash-k">平台</span>
             <strong><span class="pill ${overallClass(platform)}">${esc(
               platform
             )}</span></strong>
           </div>
-          <div class="it-res"><span class="dash-k">运行中</span><strong>${nRun}</strong></div>
+          <div class="it-res"><span class="dash-k">服务</span><strong>${nOk} / ${all.length}</strong></div>
+          <div class="it-res"><span class="dash-k">依赖</span><strong>${depOk} / ${depTotal}</strong></div>
           <div class="it-res"><span class="dash-k">异常</span><strong>${nBad}</strong></div>
           <div class="it-res"><span class="dash-k">降级</span><strong>${nDeg}</strong></div>
         </div>
-      </div>
+      </section>
 
-      <h2 class="it-sec-title">CORE RUNTIME</h2>
+      <h2 class="it-sec-title">Core Runtime</h2>
       <div class="it-svc-domains" id="domains"></div>
 
-      <h2 class="it-sec-title">AUDIT</h2>
-      <div class="it-kpi-row it-audit-kpi">
-        <div class="it-kpi">
-          <div class="dash-k">审计服务</div>
-          <div class="it-metric-v" style="font-size:16px">
-            <span class="pill ${statusPill(audit.serviceStatus)}">${esc(
-              audit.serviceStatus || "—"
-            )}</span>
-          </div>
+      <section class="it-jobs-sec" aria-label="Background Jobs">
+        <div class="it-fleet-sec-head">
+          <div class="it-env-label">Background Jobs</div>
+          <p class="muted small" style="margin:0">
+            ${jobs.length} jobs · 运行中 ${jobRun} · 排队 ${jobQ} · 失败 ${jobFail} · 成功 ${jobOk}
+          </p>
         </div>
-        <div class="it-kpi">
-          <div class="dash-k">写入</div>
-          <div class="it-metric-v" style="font-size:16px">
-            <span class="pill ${statusPill(audit.writeStatus)}">${esc(
-              audit.writeStatus || "—"
-            )}</span>
-          </div>
+        <div class="it-jobs-table-wrap">
+          <table class="table it-jobs-table">
+            <thead><tr><th>作业</th><th>状态</th><th>开始</th><th>说明</th></tr></thead>
+            <tbody id="jobs"></tbody>
+          </table>
         </div>
-        <div class="it-kpi">
-          <div class="dash-k">积压</div>
-          <div class="it-metric-v">${audit.backlog ?? "—"}</div>
-        </div>
-        <div class="it-kpi">
-          <div class="dash-k">最近写入</div>
-          <div class="it-metric-v" style="font-size:15px">${esc(
-            audit.lastWriteAt || "—"
-          )}</div>
-        </div>
-        <div class="it-kpi">
-          <div class="dash-k">审计存储</div>
-          <div class="it-metric-v" style="font-size:16px">
-            <span class="pill ${statusPill(audit.storeStatus)}">${esc(
-              audit.storeStatus || "—"
-            )}</span>
-          </div>
-        </div>
-      </div>
-
-      <h2 class="it-sec-title">SCHEDULED JOBS</h2>
-      <table class="table">
-        <thead><tr><th>作业</th><th>状态</th><th>开始</th><th>说明</th></tr></thead>
-        <tbody id="jobs"></tbody>
-      </table>`;
+      </section>`;
 
     const domainsEl = root.querySelector("#domains");
     domainsEl.innerHTML = domains
       .map((d) => {
         const rows = (d.services || [])
           .map((c) => {
-            const deps = (c.dependsOn || [])
-              .map((id) => nameById[id] || id)
-              .join("、");
-            return `<div class="it-svc-row-lite" data-svc="${esc(c.id)}">
-              <div class="it-svc-row-main">
-                <span class="pill ${statusPill(c.status)}">${esc(c.status)}</span>
-                <strong>${esc(c.name)}</strong>
-                ${
-                  deps
-                    ? `<span class="muted small">依赖 ${esc(deps)}</span>`
-                    : ""
-                }
-                <div class="muted small">${esc(c.detail || "")}</div>
-              </div>
-              <div class="it-svc-actions">
-                ${
-                  c.canRestart
-                    ? `<button type="button" class="btn" data-restart="${esc(
-                        c.id
-                      )}">重启</button>`
-                    : ""
-                }
-              </div>
-            </div>`;
+            const depNames = (c.dependsOn || []).map(
+              (id) => nameById[id] || id
+            );
+            const depHtml = depNames.length
+              ? `<span class="it-svc-dep">→ ${esc(depNames.join(" · "))}</span>`
+              : `<span class="muted small">—</span>`;
+            const bad = svcBad(c.status) || !svcOk(c.status);
+            let actions = "";
+            if (c.auditLink) {
+              actions += `<a class="it-svc-link" href="./it-home.html?view=audit" data-audit-link>查看审计 →</a>`;
+            }
+            if (c.canRestart && bad) {
+              actions += `<button type="button" class="btn btn-sm danger-outline" data-restart="${esc(
+                c.id
+              )}">重启</button>`;
+            } else if (c.canRestart) {
+              actions += `<details class="it-svc-more"><summary aria-label="更多">⋯</summary>
+                <div class="it-svc-more-menu">
+                  <button type="button" class="it-svc-more-item" data-restart="${esc(
+                    c.id
+                  )}">重启服务</button>
+                </div>
+              </details>`;
+            }
+            return `<tr class="it-svc-matrix-row" data-svc="${esc(c.id)}">
+              <td><strong>${esc(c.name)}</strong></td>
+              <td><span class="pill ${statusPill(c.status)}">${esc(
+                c.status
+              )}</span></td>
+              <td>${depHtml}</td>
+              <td class="small muted">${esc(c.detail || "—")}</td>
+              <td class="it-svc-matrix-actions">${actions}</td>
+            </tr>`;
           })
           .join("");
         return `<section class="it-svc-domain">
           <h3 class="it-svc-domain-title">${esc(d.title)}</h3>
-          ${rows}
+          <div class="it-svc-matrix-wrap">
+            <table class="table it-svc-matrix">
+              <thead>
+                <tr>
+                  <th>服务</th>
+                  <th>状态</th>
+                  <th>依赖</th>
+                  <th>运行信息</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
         </section>`;
       })
       .join("");
 
-    root.querySelector("#jobs").innerHTML = (s.jobs || [])
+    root.querySelector("#jobs").innerHTML = jobs
       .map((j) => {
+        const label =
+          j.status === "跑中" ? "运行中" : j.status;
         const cls =
-          j.status === "失败" ? "danger" : j.status === "成功" ? "ok" : "warn";
+          j.status === "失败"
+            ? "danger"
+            : j.status === "成功"
+              ? "ok"
+              : "warn";
         return `<tr>
-          <td><strong>${esc(j.name)}</strong><div class="muted small">${esc(j.id)}</div></td>
-          <td><span class="pill ${cls}">${esc(j.status)}</span></td>
+          <td><strong>${esc(j.name)}</strong><div class="muted small">${esc(
+            j.id
+          )}</div></td>
+          <td><span class="pill ${cls}">${esc(label)}</span></td>
           <td class="small">${esc(j.started)}</td>
           <td class="small">${esc(j.log)}</td>
         </tr>`;
@@ -411,6 +444,12 @@ export async function activate({ account, url, root }) {
       .join("");
 
     domainsEl.onclick = async (e) => {
+      const link = e.target.closest("[data-audit-link]");
+      if (link) {
+        e.preventDefault();
+        await go("audit", true);
+        return;
+      }
       const btn = e.target.closest("[data-restart]");
       if (!btn) return;
       const id = btn.getAttribute("data-restart");
@@ -424,14 +463,227 @@ export async function activate({ account, url, root }) {
       const flash = root.querySelector("#flash");
       flash.textContent = `已提交重启：${id}`;
       flash.classList.add("show");
+      const details = btn.closest("details");
+      if (details) details.open = false;
     };
+  }
 
-    function svcOk(st) {
-      return st === "就绪" || st === "运行中" || st === "正常" || st === "成功";
+  async function paintAudit() {
+    document.title = "审计 · 系统管理";
+    const a = await getItAudit();
+    const fabric = a.fabric || {};
+    const integ = a.integrity || {};
+    const probes = a.probes || {};
+    const shadow = a.shadow || {};
+    const wal = a.wal || {};
+    const vault = a.vault || {};
+    const ident = a.identity || {};
+
+    function healthPill(st) {
+      const s = String(st || "");
+      if (/healthy|normal|verified|enabled|ok/i.test(s) || s === "正常")
+        return "ok";
+      if (/fail|error|mismatch|critical/i.test(s)) return "danger";
+      return "warn";
     }
-    function svcBad(st) {
-      return st === "失败" || st === "有失败" || st === "未就绪" || st === "掉线";
-    }
+
+    const vaultPct = vault.totalTb
+      ? Math.round((Number(vault.usedTb) / Number(vault.totalTb)) * 100)
+      : 0;
+
+    root.innerHTML = `
+      ${headHtml(
+        "it-audit",
+        "审计",
+        `Audit Integrity & Trace · 截至 ${a.asOf || ""}`
+      )}
+
+      <section class="it-audit-fabric" aria-label="Audit Fabric">
+        <div class="it-env-label">Audit Fabric</div>
+        <div class="it-audit-chain">
+          ${(fabric.chains || [])
+            .map(
+              (c, i) => `
+            <div class="it-audit-chain-node">
+              <span class="pill ${healthPill(c.status)}">${esc(
+                c.status
+              )}</span>
+              <strong>${esc(c.label)}</strong>
+              <span class="muted small">${esc(c.detail || "")}</span>
+            </div>
+            ${
+              i < (fabric.chains || []).length - 1
+                ? `<div class="it-audit-chain-arrow" aria-hidden="true">↓</div>`
+                : ""
+            }`
+            )
+            .join("")}
+        </div>
+        <div class="it-env-metrics" style="border-bottom:0; margin-bottom:0">
+          <div class="it-env-metric">Coverage · <strong>${esc(
+            String(fabric.coveragePct ?? integ.coveragePct ?? "—")
+          )}%</strong></div>
+          <div class="it-env-metric">Lag · <strong>${esc(
+            String(fabric.lagSec ?? "—")
+          )} s</strong></div>
+          <div class="it-env-metric">Backlog · <strong>${esc(
+            String(fabric.backlog ?? 0)
+          )}</strong></div>
+          <div class="it-env-metric">Mismatch · <strong>${esc(
+            String(fabric.mismatch ?? integ.mismatch ?? 0)
+          )}</strong></div>
+        </div>
+      </section>
+
+      <section class="it-audit-grid">
+        <div class="it-audit-panel">
+          <div class="it-env-label">Integrity</div>
+          <div class="it-kpi-row" style="border:0; padding:0; margin:0">
+            <div class="it-kpi">
+              <div class="dash-k">Shadow Integrity</div>
+              <div class="it-metric-v" style="font-size:15px">
+                <span class="pill ${healthPill(
+                  integ.shadowIntegrity || shadow.integrity
+                )}">${esc(integ.shadowIntegrity || shadow.integrity || "—")}</span>
+              </div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Shadow lag</div>
+              <div class="it-metric-v">${esc(
+                String(integ.shadowLagMs ?? shadow.lagMs ?? "—")
+              )} <span class="muted small">ms</span></div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Redo lag</div>
+              <div class="it-metric-v">${esc(
+                String(integ.redoLagSec ?? wal.redoLagSec ?? "—")
+              )} <span class="muted small">s</span></div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Backlog</div>
+              <div class="it-metric-v">${esc(
+                String(integ.backlog ?? 0)
+              )}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="it-audit-panel">
+          <div class="it-env-label">sovProbe</div>
+          <div class="it-res-strip" style="margin-bottom:8px">
+            <div class="it-res"><span class="dash-k">覆盖</span><strong>${esc(
+              String(probes.nodesCovered ?? "—")
+            )} / ${esc(String(probes.nodesTotal ?? "—"))}</strong></div>
+            <div class="it-res"><span class="dash-k">active</span><strong>${esc(
+              String(probes.active ?? "—")
+            )}</strong></div>
+            <div class="it-res"><span class="dash-k">degraded</span><strong>${esc(
+              String(probes.degraded ?? 0)
+            )}</strong></div>
+          </div>
+          <div class="it-env-metrics" style="border:0; padding:0; margin:0">
+            <div class="it-env-metric">events/s · <strong>${esc(
+              Number(probes.eventsPerSec || 0).toLocaleString("en-US")
+            )}</strong></div>
+            <div class="it-env-metric">delivery lag · <strong>${esc(
+              String(probes.deliveryLagSec ?? "—")
+            )} s</strong></div>
+            <div class="it-env-metric">dropped · <strong>${esc(
+              String(probes.dropped ?? 0)
+            )}</strong></div>
+          </div>
+          <p class="muted small" style="margin:10px 0 0">${esc(
+            probes.note || ""
+          )}</p>
+        </div>
+
+        <div class="it-audit-panel it-audit-shadow">
+          <div class="it-env-label">Shadow Engine</div>
+          <div class="it-kpi-row" style="border:0; padding:0; margin:0">
+            <div class="it-kpi">
+              <div class="dash-k">Observed</div>
+              <div class="it-metric-v">${esc(
+                Number(shadow.requestsObserved || 0).toLocaleString("en-US")
+              )}</div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Verified</div>
+              <div class="it-metric-v">${esc(
+                Number(shadow.verified || 0).toLocaleString("en-US")
+              )}</div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Pending</div>
+              <div class="it-metric-v">${esc(String(shadow.pending ?? 0))}</div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Mismatch</div>
+              <div class="it-metric-v">${esc(
+                String(shadow.mismatch ?? 0)
+              )}</div>
+            </div>
+            <div class="it-kpi">
+              <div class="dash-k">Shadow lag</div>
+              <div class="it-metric-v">${esc(String(shadow.lagMs ?? "—"))}
+                <span class="muted small">ms</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="it-audit-panel">
+          <div class="it-env-label">WAL / REDO</div>
+          <div class="it-env-metrics" style="border:0; padding:0; margin:0 0 10px">
+            <div class="it-env-metric">WAL position · <strong>${esc(
+              wal.position || "—"
+            )}</strong></div>
+            <div class="it-env-metric">Redo lag · <strong>${esc(
+              String(wal.redoLagSec ?? "—")
+            )} s</strong></div>
+            <div class="it-env-metric">Replay backlog · <strong>${esc(
+              String(wal.replayBacklog ?? 0)
+            )}</strong></div>
+            <div class="it-env-metric">Analysis · <strong><span class="pill ${healthPill(
+              wal.analysis
+            )}">${esc(wal.analysis || "—")}</span></strong></div>
+          </div>
+          <div class="it-env-label" style="margin-top:8px">sovVault</div>
+          <div class="it-metric-v" style="font-size:18px; margin:4px 0 6px">
+            ${esc(String(vault.usedTb ?? "—"))} / ${esc(
+              String(vault.totalTb ?? "—")
+            )} TB
+          </div>
+          <div class="it-bar"><i style="width:${vaultPct}%"></i></div>
+          <div class="it-env-metrics" style="border:0; padding:8px 0 0; margin:0">
+            <div class="it-env-metric">Write · <strong><span class="pill ${healthPill(
+              vault.writeStatus
+            )}">${esc(vault.writeStatus || "—")}</span></strong></div>
+            <div class="it-env-metric">Integrity · <strong><span class="pill ${healthPill(
+              vault.integrity
+            )}">${esc(vault.integrity || "—")}</span></strong></div>
+            <div class="it-env-metric">Last commit · <strong>${esc(
+              (vault.lastCommitAt || "").replace(/^\d{4}-\d{2}-\d{2}\s*/, "") ||
+                "—"
+            )}</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="it-audit-identity" aria-label="Audit Identity">
+        <div class="it-env-label">Audit Identity</div>
+        <div class="it-identity-row">
+          <div>
+            <strong>${esc(ident.account || "—")}</strong>
+            <span class="pill ${healthPill(ident.status)}" style="margin-left:8px">${esc(
+              ident.status || "—"
+            )}</span>
+          </div>
+          <div class="muted small">
+            Privilege ${esc(ident.privilege || "—")}
+            · Interactive ${esc(ident.interactive || "—")}
+            · Last rotation ${esc(ident.lastRotation || "—")}
+          </div>
+        </div>
+      </section>`;
   }
 
   function statusPill(st) {

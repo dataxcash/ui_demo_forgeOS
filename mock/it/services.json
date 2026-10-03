@@ -1,5 +1,6 @@
 {
   "asOf": "2026-10-02 19:55",
+  "note": "Runtime & Dependencies：服务健康 + 依赖方向；审计深度指标见独立审计页。",
   "domains": [
     {
       "id": "storage",
@@ -8,8 +9,8 @@
         {
           "id": "storaged",
           "name": "storaged",
-          "status": "运行中",
-          "detail": "对象库与台账一致",
+          "status": "正常",
+          "detail": "对象库正常",
           "canRestart": true
         }
       ]
@@ -21,15 +22,15 @@
         {
           "id": "gateway",
           "name": "算力网关",
-          "status": "运行中",
+          "status": "正常",
           "detail": "推理入口",
           "canRestart": true
         },
         {
           "id": "engine",
           "name": "推理引擎",
-          "status": "运行中",
-          "detail": "显存驻留 2 个模型",
+          "status": "正常",
+          "detail": "2 模型驻留",
           "dependsOn": ["gateway"],
           "canRestart": true
         }
@@ -42,23 +43,23 @@
         {
           "id": "aispace-api",
           "name": "aispace",
-          "status": "运行中",
-          "detail": "业务工作台后端 · API",
+          "status": "正常",
+          "detail": "API",
           "canRestart": true
         },
         {
           "id": "slimgraphd",
           "name": "slimgraphd",
-          "status": "运行中",
-          "detail": "主题谱系 · graph.* UDS",
+          "status": "正常",
+          "detail": "graph",
           "dependsOn": ["aispace-api"],
           "canRestart": true
         },
         {
           "id": "slimrag",
           "name": "slimRAG",
-          "status": "运行中",
-          "detail": "切段检索入库",
+          "status": "正常",
+          "detail": "RAG",
           "dependsOn": ["aispace-api"],
           "canRestart": true
         }
@@ -71,28 +72,23 @@
         {
           "id": "audit-svc",
           "name": "Audit Service",
-          "status": "运行中",
-          "detail": "审计采集与查询入口",
-          "canRestart": true
+          "status": "正常",
+          "detail": "采集 / 查询",
+          "canRestart": true,
+          "auditLink": true
         },
         {
           "id": "audit-writer",
           "name": "Audit Writer",
-          "status": "运行中",
-          "detail": "审计事件写入 Sink",
+          "status": "正常",
+          "detail": "Sink",
           "dependsOn": ["audit-svc"],
-          "canRestart": true
+          "canRestart": true,
+          "auditLink": true
         }
       ]
     }
   ],
-  "audit": {
-    "serviceStatus": "运行中",
-    "writeStatus": "正常",
-    "backlog": 0,
-    "lastWriteAt": "2026-10-02 19:54:32",
-    "storeStatus": "正常"
-  },
   "jobs": [
     {
       "id": "J-2201",

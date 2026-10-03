@@ -178,6 +178,11 @@ export function navGroupsFor(account) {
           key: "it-aispace",
         },
         {
+          href: "./it-home.html?view=audit",
+          labelKey: "nav.itAudit",
+          key: "it-audit",
+        },
+        {
           href: "./it-home.html?view=remote",
           labelKey: "nav.itRemote",
           key: "it-remote",

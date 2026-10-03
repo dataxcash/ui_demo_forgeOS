@@ -5,9 +5,9 @@ import {
   confirmOrgTasks,
   archiveOrgTasks,
   getOrgCurrent,
-} from "../api-mock.js?v=nav55";
-import { confirmDialog } from "../confirm.js?v=nav55";
-import { esc } from "../esc.js?v=nav55";
+} from "../api-mock.js?v=nav56";
+import { confirmDialog } from "../confirm.js?v=nav56";
+import { esc } from "../esc.js?v=nav56";
 
 export const roles = ["hr"];
 export const title = "aiSpace";
@@ -37,7 +37,7 @@ export async function activate({ account, url, root }) {
   const taskId = url.searchParams.get("id") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav55");
+    const { softNavigate } = await import("../soft-nav.js?v=nav56");
     const u = new URL("./hr-org.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.id) u.searchParams.set("id", extra.id);

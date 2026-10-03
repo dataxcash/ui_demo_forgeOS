@@ -1077,11 +1077,21 @@ a.tool-card:hover {
 .it-svc-summary {
   margin-bottom: 8px;
 }
+.it-plat {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 14px;
+  margin: 0 0 16px;
+}
+.it-plat-strip {
+  margin-top: 2px;
+}
 .it-svc-domains {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-bottom: 8px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 .it-svc-domain-title {
   font-size: 12px;
@@ -1090,6 +1100,113 @@ a.tool-card:hover {
   text-transform: none;
   color: var(--text-secondary);
   margin: 0 0 6px;
+}
+.it-svc-matrix-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: auto;
+}
+.it-svc-matrix {
+  margin: 0;
+}
+.it-svc-matrix th:last-child,
+.it-svc-matrix td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+.it-svc-dep {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.it-svc-matrix-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.it-svc-link {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.it-svc-link:hover {
+  text-decoration: underline;
+}
+.it-svc-more {
+  position: relative;
+}
+.it-svc-more > summary {
+  list-style: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--muted);
+  user-select: none;
+}
+.it-svc-more > summary::-webkit-details-marker {
+  display: none;
+}
+.it-svc-more > summary:hover,
+.it-svc-more[open] > summary {
+  background: var(--accent-soft, #eef4f1);
+  color: var(--text);
+}
+.it-svc-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 120px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+  z-index: 5;
+}
+.it-svc-more-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+  color: var(--text);
+}
+.it-svc-more-item:hover {
+  background: var(--accent-soft, #eef4f1);
+}
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.danger-outline {
+  border-color: var(--danger, #c44);
+  color: var(--danger, #c44);
+  background: transparent;
+}
+.it-jobs-sec {
+  margin-top: 8px;
+}
+.it-jobs-table-wrap {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: auto;
+}
+.it-jobs-table {
+  margin: 0;
 }
 .it-svc-row-lite {
   display: flex;
@@ -1112,6 +1229,65 @@ a.tool-card:hover {
 .it-svc-row-main .muted.small {
   flex-basis: 100%;
   margin: 0;
+}
+.it-audit-fabric {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 14px;
+  margin: 0 0 16px;
+}
+.it-audit-chain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 4px 0 10px;
+}
+.it-audit-chain-node {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  padding: 4px 0;
+}
+.it-audit-chain-arrow {
+  color: var(--muted);
+  padding-left: 10px;
+  line-height: 1;
+  font-size: 12px;
+}
+.it-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 960px) {
+  .it-audit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.it-audit-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.it-audit-shadow {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+.it-audit-identity {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.it-identity-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .it-audit-kpi {
   grid-template-columns: repeat(5, 1fr);

@@ -1,5 +1,5 @@
-import { getDeal } from "../api-mock.js?v=nav55";
-import { esc } from "../esc.js?v=nav55";
+import { getDeal } from "../api-mock.js?v=nav56";
+import { esc } from "../esc.js?v=nav56";
 
 export const roles = ["employee", "manager", "boss"];
 export const active = "my-deals";
