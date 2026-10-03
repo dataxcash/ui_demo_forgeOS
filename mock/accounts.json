@@ -32,7 +32,6 @@
     "name": "何审计",
     "title": "合规",
     "role": "compliance",
-    "dept": "合规",
-    "stub": true
+    "dept": "合规"
   }
 ]

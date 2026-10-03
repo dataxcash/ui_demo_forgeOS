@@ -1,0 +1,212 @@
+{
+  "asOf": "2026-10-02 19:55",
+  "incidents": [
+    {
+      "id": "inc-policy",
+      "kind": "policy",
+      "severity": "warn",
+      "title": "3 条策略命中",
+      "eventIds": ["ev-03", "ev-05", "ev-08"]
+    },
+    {
+      "id": "inc-unmatched",
+      "kind": "unmatched",
+      "severity": "warn",
+      "title": "1 条链关联失败",
+      "eventIds": ["ev-07"]
+    }
+  ],
+  "people": [
+    { "id": "li.na", "name": "李娜", "dept": "销售一部" },
+    { "id": "zhao.qiang", "name": "赵强", "dept": "销售一部" },
+    { "id": "sun.yue", "name": "孙悦", "dept": "销售一部" },
+    { "id": "qian.jin", "name": "钱进", "dept": "售前" },
+    { "id": "chen.hr", "name": "陈思", "dept": "人事" }
+  ],
+  "events": [
+    {
+      "id": "ev-01",
+      "at": "2026-10-02 19:51:08",
+      "person": "李娜",
+      "personId": "li.na",
+      "dept": "销售一部",
+      "track": "local",
+      "trackZh": "本地推理",
+      "requestId": "req-a91c2e",
+      "summary": "询价助手 · 客户交期口径",
+      "fingerprint": "sha256:7c1a…e42b",
+      "correlation": "matched",
+      "policyHits": [],
+      "theme": "澄海-华能询价",
+      "canReveal": true,
+      "body": "（原文）请按华能询价函第三条核对交期，并列出可承诺窗口。附件含对方联系人手机号。"
+    },
+    {
+      "id": "ev-02",
+      "at": "2026-10-02 19:44:21",
+      "person": "钱进",
+      "personId": "qian.jin",
+      "dept": "售前",
+      "track": "external",
+      "trackZh": "外发 LLM",
+      "requestId": "req-b33f01",
+      "summary": "方案草稿润色 · 无敏感字段",
+      "fingerprint": "sha256:22d0…91aa",
+      "correlation": "matched",
+      "policyHits": [],
+      "theme": "售前方案-十月",
+      "canReveal": true,
+      "body": "（原文）把三段产品能力改成客户可读的短句，不要写内部型号。"
+    },
+    {
+      "id": "ev-03",
+      "at": "2026-10-02 19:38:02",
+      "person": "赵强",
+      "personId": "zhao.qiang",
+      "dept": "销售一部",
+      "track": "external",
+      "trackZh": "外发 LLM",
+      "requestId": "req-c08e77",
+      "summary": "外发摘要 · 命中「客户原文外发」",
+      "fingerprint": "sha256:9be4…0c11",
+      "correlation": "matched",
+      "policyHits": ["p-pii"],
+      "theme": "澄海-华能询价",
+      "canReveal": true,
+      "body": "（原文）请把客户邮件全文发给云端模型提炼要点：……（含对方报价与联系方式）"
+    },
+    {
+      "id": "ev-04",
+      "at": "2026-10-02 18:12:40",
+      "person": "陈思",
+      "personId": "chen.hr",
+      "dept": "人事",
+      "track": "internal",
+      "trackZh": "内部系统",
+      "requestId": "req-d55a10",
+      "summary": "orgdir · 汇报关系变更",
+      "fingerprint": "sha256:c4f2…77d8",
+      "correlation": "matched",
+      "policyHits": [],
+      "theme": "",
+      "canReveal": false,
+      "body": ""
+    },
+    {
+      "id": "ev-05",
+      "at": "2026-10-02 17:55:19",
+      "person": "孙悦",
+      "personId": "sun.yue",
+      "dept": "销售一部",
+      "track": "local",
+      "trackZh": "本地推理",
+      "requestId": "req-e12b90",
+      "summary": "合同对照 · 命中「密级材料」",
+      "fingerprint": "sha256:11a8…de03",
+      "correlation": "matched",
+      "policyHits": ["p-class"],
+      "theme": "华能框架合同",
+      "canReveal": true,
+      "body": "（原文）对照框架合同附件 B 的价格条款，标出与上次报价不一致处。"
+    },
+    {
+      "id": "ev-06",
+      "at": "2026-10-02 16:20:04",
+      "person": "李娜",
+      "personId": "li.na",
+      "dept": "销售一部",
+      "track": "local",
+      "trackZh": "本地推理",
+      "requestId": "req-f90aa2",
+      "summary": "跟进纪要整理",
+      "fingerprint": "sha256:55e1…b8c0",
+      "correlation": "matched",
+      "policyHits": [],
+      "theme": "澄海-华能询价",
+      "canReveal": true,
+      "body": "（原文）把今天下午通话纪要压成三条待办，不要写金额。"
+    },
+    {
+      "id": "ev-07",
+      "at": "2026-10-02 15:03:33",
+      "person": "钱进",
+      "personId": "qian.jin",
+      "dept": "售前",
+      "track": "external",
+      "trackZh": "外发 LLM",
+      "requestId": "req-orphan-19",
+      "summary": "外发调用 · 跨轨未匹配",
+      "fingerprint": "sha256:8801…2f4e",
+      "correlation": "unmatched",
+      "policyHits": [],
+      "theme": "售前方案-十月",
+      "canReveal": true,
+      "body": "（原文）根据公开产品页写一段能力概述。"
+    },
+    {
+      "id": "ev-08",
+      "at": "2026-10-02 11:28:50",
+      "person": "李娜",
+      "personId": "li.na",
+      "dept": "销售一部",
+      "track": "external",
+      "trackZh": "外发 LLM",
+      "requestId": "req-g71cc4",
+      "summary": "翻译邮件 · 命中「客户原文外发」",
+      "fingerprint": "sha256:d09c…44a1",
+      "correlation": "matched",
+      "policyHits": ["p-pii"],
+      "theme": "澄海-华能询价",
+      "canReveal": true,
+      "body": "（原文）请英译这封客户来信全文后再回复草稿。"
+    }
+  ],
+  "policies": [
+    {
+      "id": "p-pii",
+      "name": "客户原文外发",
+      "status": "Enforced",
+      "scope": "外发 LLM",
+      "hitsToday": 2,
+      "rule": "外发请求若含客户邮件/合同原文或个人联系方式，记录命中并标记取证。Demo 阶段只读，不改规则。"
+    },
+    {
+      "id": "p-class",
+      "name": "密级材料",
+      "status": "Enforced",
+      "scope": "本地推理 · 外发",
+      "hitsToday": 1,
+      "rule": "主题或材料带密级标签时，审计事件必须保留指纹与关联状态；正文按权限展开。"
+    },
+    {
+      "id": "p-hold",
+      "name": "保全窗口",
+      "status": "Idle",
+      "scope": "取证包",
+      "hitsToday": 0,
+      "rule": "legal hold 生效期内禁止销毁关联审计事件。当前无活动保全。"
+    }
+  ],
+  "packs": [
+    {
+      "id": "pack-01",
+      "title": "华能询价 · 10-02",
+      "status": "就绪",
+      "window": "2026-10-02 11:00–20:00",
+      "theme": "澄海-华能询价",
+      "eventIds": ["ev-01", "ev-03", "ev-06", "ev-08"],
+      "fingerprints": 4,
+      "createdAt": "2026-10-02 19:50"
+    },
+    {
+      "id": "pack-02",
+      "title": "跨轨未匹配核查",
+      "status": "准备中",
+      "window": "2026-10-02 15:00–16:00",
+      "theme": "售前方案-十月",
+      "eventIds": ["ev-07"],
+      "fingerprints": 1,
+      "createdAt": "2026-10-02 19:10"
+    }
+  ]
+}

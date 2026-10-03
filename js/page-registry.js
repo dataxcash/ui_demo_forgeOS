@@ -2,7 +2,7 @@
  * 页面注册表：路径 → 动态模块。
  * 未登记的 .html 仍走整页跳转（如 login）。
  */
-const V = "nav61";
+const V = "nav63";
 
 function page(path) {
   return () => import(`${path}?v=${V}`);
@@ -26,7 +26,8 @@ export const PAGE_LOADERS = {
   "graph-theme.html": page("./pages/graph-theme.js"),
   "graph-candidates.html": page("./pages/graph-candidates.js"),
   "search.html": page("./pages/search.js"),
-  "compliance-stub.html": page("./pages/stub.js"),
+  "compliance.html": page("./pages/compliance.js"),
+  "compliance-stub.html": page("./pages/compliance.js"),
   "no-access.html": page("./pages/stub.js"),
 };
 
@@ -48,6 +49,7 @@ const ALIASES = {
   "hr-home.html": { key: "hr-org.html", view: "tasks" },
   "hr-import.html": { key: "hr-org.html", view: "upload" },
   "it-job.html": { key: "it-home.html", view: "services" },
+  "compliance-stub.html": { key: "compliance.html", view: "search" },
 };
 
 /** 把旧 URL 规范成注册表主地址（保留其余 query） */

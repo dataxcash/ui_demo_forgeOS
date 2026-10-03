@@ -24,6 +24,8 @@ const PATHS = {
   share: `<svg ${ATTR}><circle cx="4" cy="8" r="1.75"/><circle cx="12" cy="4" r="1.75"/><circle cx="12" cy="12" r="1.75"/><path d="M5.6 7.2 10.4 4.8M5.6 8.8 10.4 11.2"/></svg>`,
   search: `<svg ${ATTR}><circle cx="7" cy="7" r="3.5"/><path d="M10 10.5 13.5 14"/></svg>`,
   shield: `<svg ${ATTR}><path d="M8 2.5 3.5 4.5v3.2c0 3 2 5.2 4.5 6.3 2.5-1.1 4.5-3.3 4.5-6.3V4.5L8 2.5Z"/></svg>`,
+  lock: `<svg ${ATTR}><rect x="3.5" y="7" width="9" height="6.5" rx="0.5"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></svg>`,
+  box: `<svg ${ATTR}><path d="M2.5 5.5 8 2.5l5.5 3v7L8 13.5 2.5 12.5v-7Z"/><path d="M2.5 5.5 8 8.5l5.5-3M8 8.5v5"/></svg>`,
   fleet: `<svg ${ATTR}><rect x="2" y="4" width="5.5" height="4.5" rx="0.4"/><rect x="8.5" y="4" width="5.5" height="4.5" rx="0.4"/><path d="M3.5 12.5h3M9.5 12.5h3M5 8.5v2M11 8.5v2"/></svg>`,
 };
 
@@ -34,6 +36,9 @@ const BY_NAV_KEY = {
   "it-compute": "chip",
   "it-aispace": "nodes",
   "it-audit": "shield",
+  "comp-search": "search",
+  "comp-policy": "lock",
+  "comp-evidence": "box",
   "it-remote": "monitor",
   "it-storage": "disk",
   "my-deals": "list",
@@ -59,6 +64,7 @@ const BY_NAV_KEY = {
 const BY_APP = {
   aispace: "nodes",
   platform: "gauge",
+  audit: "shield",
   ingest: "inbox",
   aitools: "tool",
   biz: "chart",

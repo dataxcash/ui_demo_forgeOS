@@ -1,7 +1,10 @@
 const KEY = "fos-webui-account";
+const ACC_V = "nav63";
 
 export async function loadAccounts() {
-  const res = await fetch("../mock/accounts.json");
+  const res = await fetch(`../mock/accounts.json?v=${ACC_V}`, {
+    cache: "no-store",
+  });
   return res.json();
 }
 
@@ -40,7 +43,7 @@ export function homeFor(account) {
     hr: "./hr-org.html?view=current",
     boss: "./boss-home.html",
     it: "./it-home.html?view=dashboard",
-    compliance: "./compliance-stub.html",
+    compliance: "./compliance.html?view=search",
   };
   return map[account.role] || "./login.html";
 }
@@ -151,6 +154,28 @@ export function navGroupsFor(account) {
       id: "biz",
       appKey: "app.biz",
       items: [{ href: "./boss-home.html", labelKey: "nav.boss", key: "boss" }],
+    });
+  } else if (account.role === "compliance") {
+    groups.push({
+      id: "audit",
+      appKey: "app.audit",
+      items: [
+        {
+          href: "./compliance.html?view=search",
+          labelKey: "nav.compSearch",
+          key: "comp-search",
+        },
+        {
+          href: "./compliance.html?view=policy",
+          labelKey: "nav.compPolicy",
+          key: "comp-policy",
+        },
+        {
+          href: "./compliance.html?view=evidence",
+          labelKey: "nav.compEvidence",
+          key: "comp-evidence",
+        },
+      ],
     });
   } else if (account.role === "it") {
     groups.push({

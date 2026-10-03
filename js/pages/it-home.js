@@ -7,10 +7,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav61";
-import { confirmDialog } from "../confirm.js?v=nav61";
-import { esc } from "../esc.js?v=nav61";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav61";
+} from "../api-mock.js?v=nav63";
+import { confirmDialog } from "../confirm.js?v=nav63";
+import { esc } from "../esc.js?v=nav63";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav63";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -49,7 +49,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav61");
+    const { softNavigate } = await import("../soft-nav.js?v=nav63");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);

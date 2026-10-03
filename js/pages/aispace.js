@@ -1,5 +1,5 @@
-import { getMyDeals, getDeal, askDeal } from "../api-mock.js?v=nav61";
-import { esc } from "../esc.js?v=nav61";
+import { getMyDeals, getDeal, askDeal } from "../api-mock.js?v=nav63";
+import { esc } from "../esc.js?v=nav63";
 
 export const roles = ["employee", "manager", "boss"];
 export const title = "aiSpace";
@@ -60,7 +60,7 @@ async function switchView(next, push, extra = {}) {
   if (extra.id) dealId = extra.id;
   if (extra.from) returnView = extra.from;
   if (extra.f) filter = extra.f;
-  const { softNavigate } = await import(`../soft-nav.js?v=nav61`);
+  const { softNavigate } = await import(`../soft-nav.js?v=nav63`);
   await softNavigate(tipUrl(), { push });
 }
 

@@ -1036,6 +1036,11 @@ export async function getItAudit() {
   return loadJson("../mock/it/audit.json");
 }
 
+export async function getComplianceWorkspace() {
+  await delay();
+  return loadJson("../mock/compliance/workspace.json");
+}
+
 export async function getItCompute() {
   await delay();
   return loadJson("../mock/it/compute.json");
