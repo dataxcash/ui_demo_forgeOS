@@ -1,6 +1,22 @@
 {
   "asOf": "2026-10-02 19:55",
-  "note": "Edge Fleet & Probes：边缘进料机队与探针健康。",
+  "note": "Remote Fleet & Discovery：ENVIRONMENT 是环境认知，FLEET 是机队操作。",
+  "discovery": {
+    "status": "Known",
+    "lastAt": "2026-10-02 19:55",
+    "topology": {
+      "known": 4,
+      "expected": 4
+    },
+    "agents": {
+      "known": 7,
+      "expected": 8
+    },
+    "hosts": {
+      "known": 8,
+      "expected": null
+    }
+  },
   "switches": [
     {
       "id": "sw-core",

@@ -6,10 +6,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav54";
-import { confirmDialog } from "../confirm.js?v=nav54";
-import { esc } from "../esc.js?v=nav54";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav54";
+} from "../api-mock.js?v=nav55";
+import { confirmDialog } from "../confirm.js?v=nav55";
+import { esc } from "../esc.js?v=nav55";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav55";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -47,7 +47,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav54");
+    const { softNavigate } = await import("../soft-nav.js?v=nav55");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -838,12 +838,25 @@ export async function activate({ account, url, root }) {
     const pack = await getItRemote();
     const switches = pack.switches || [];
     const hosts = pack.hosts || [];
+    const disco = pack.discovery || {};
     const swMap = Object.fromEntries(switches.map((s) => [s.id, s]));
 
     function hostStatusClass(st) {
       if (st === "在线") return "ok";
       if (st === "掉线" || st === "未部署") return "danger";
       return "warn";
+    }
+
+    function swStatusClass(st) {
+      if (st === "正常") return "ok";
+      if (st === "告警") return "warn";
+      return "danger";
+    }
+
+    function swShort(s) {
+      const n = s?.name || s?.id || "—";
+      const parts = n.split(" · ");
+      return parts.length > 1 ? parts[parts.length - 1] : n;
     }
 
     function probeHealth(h) {
@@ -862,6 +875,59 @@ export async function activate({ account, url, root }) {
       return (h.probes || []).map((p) => p.name);
     }
 
+    function hasAgent(h) {
+      if ((h.probes || []).length) return true;
+      return (h.services || []).some((s) =>
+        /envPD|slimHub|探测|枢纽|agent/i.test(`${s.name || ""} ${s.kind || ""}`)
+      );
+    }
+
+    /** known/expected：无 expected 时只报 discovered，不伪造分母 */
+    function cognRatio(block, fallbackKnown) {
+      const known = block?.known ?? fallbackKnown;
+      const expected = block?.expected;
+      if (expected == null) return `${known} discovered`;
+      return `${known} / ${expected}`;
+    }
+
+    function subtreeIds(rootId) {
+      const ids = new Set([rootId]);
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const s of switches) {
+          if (s.parentId && ids.has(s.parentId) && !ids.has(s.id)) {
+            ids.add(s.id);
+            grew = true;
+          }
+        }
+      }
+      return ids;
+    }
+
+    function hostsUnder(swId) {
+      const ids = subtreeIds(swId);
+      return hosts.filter((h) => ids.has(h.switchId));
+    }
+
+    function orderedSwitches() {
+      const roots = switches.filter((s) => !s.parentId);
+      const out = [];
+      function walk(node, depth) {
+        out.push({ sw: node, depth });
+        switches
+          .filter((s) => s.parentId === node.id)
+          .forEach((c) => walk(c, depth + 1));
+      }
+      roots.forEach((r) => walk(r, 0));
+      // 孤儿节点（无父且不在 roots 集合外的）已覆盖；若有断链则追加
+      const seen = new Set(out.map((x) => x.sw.id));
+      switches.forEach((s) => {
+        if (!seen.has(s.id)) out.push({ sw: s, depth: 0 });
+      });
+      return out;
+    }
+
     const probeKinds = [
       ...new Set(hosts.flatMap((h) => probeNames(h))),
     ].sort();
@@ -870,88 +936,141 @@ export async function activate({ account, url, root }) {
     const nDelay = hosts.filter((h) => h.status === "延迟").length;
     const nDown = hosts.filter((h) => h.status === "掉线").length;
     const nUndeploy = hosts.filter((h) => h.status === "未部署").length;
-    const badSw = switches.filter((s) => s.status !== "正常");
+    const nAgents =
+      disco.agents?.known ?? hosts.filter(hasAgent).length;
+    const topoKnown = disco.topology?.known ?? switches.length;
+    const hostsKnown = disco.hosts?.known ?? hosts.length;
 
+    const url0 = new URL(location.href);
     let selectedId =
-      new URL(location.href).searchParams.get("host") ||
+      url0.searchParams.get("host") ||
       hosts.find((h) => h.status !== "在线")?.id ||
       hosts[0]?.id ||
       "";
+    let selectedSw = url0.searchParams.get("switch") || "";
+
+    const swRows = orderedSwitches();
+    const lastDisco =
+      (disco.lastAt || pack.asOf || "").replace(/^\d{4}-\d{2}-\d{2}\s*/, "") ||
+      "—";
 
     root.innerHTML = `
       ${headHtml(
         "it-remote",
         "远程机器",
-        `Edge Fleet & Probes · 截至 ${pack.asOf || ""}`
+        `Remote Fleet & Discovery · 截至 ${pack.asOf || ""}`
       )}
 
-      <div class="it-res-row it-svc-summary">
-        <div class="it-res-strip">
-          <div class="it-res"><span class="dash-k">机队</span><strong>${hosts.length}</strong></div>
-          <div class="it-res"><span class="dash-k">在线</span><strong>${nOnline}</strong></div>
-          <div class="it-res"><span class="dash-k">延迟</span><strong>${nDelay}</strong></div>
-          <div class="it-res"><span class="dash-k">掉线</span><strong>${nDown}</strong></div>
-          <div class="it-res"><span class="dash-k">未部署</span><strong>${nUndeploy}</strong></div>
+      <section class="it-env" aria-label="Environment">
+        <div class="it-env-label">Environment</div>
+        <div class="it-env-summary">
+          <span><strong>${switches.length}</strong> Switches</span>
+          <span><strong>${hostsKnown}</strong> Hosts</span>
+          <span><strong>${nAgents}</strong> Agents</span>
         </div>
-        <div class="it-alert-strip">
-          ${
-            badSw.length
-              ? badSw
-                  .map(
-                    (s) =>
-                      `<span class="it-alert-item warn"><i class="it-alert-dot" aria-hidden="true"></i><span>${esc(
-                        s.name
-                      )} · ${esc(s.note || s.status)}</span></span>`
-                  )
-                  .join("")
-              : `<span class="muted small">接入网正常</span>`
-          }
+        <div class="it-env-metrics">
+          <div class="it-env-metric">Discovery · <strong>${esc(
+            disco.status || "Known"
+          )}</strong></div>
+          <div class="it-env-metric">Topology · <strong>${esc(
+            cognRatio(disco.topology, topoKnown)
+          )}</strong></div>
+          <div class="it-env-metric">Agent coverage · <strong>${esc(
+            cognRatio(disco.agents, nAgents)
+          )}</strong></div>
+          <div class="it-env-metric">Last discovery · <strong>${esc(
+            lastDisco
+          )}</strong></div>
         </div>
-      </div>
+        <div class="it-env-sw-list" id="env-sw-list">
+          ${swRows
+            .map(({ sw, depth }) => {
+              const childSw = switches.filter((s) => s.parentId === sw.id)
+                .length;
+              const nHosts = hostsUnder(sw.id).length;
+              // 核心等有下属交换机的节点：显示下挂交换机数；接入叶节点：显示 hosts
+              const trail = childSw
+                ? `${childSw} switches`
+                : `${nHosts} hosts`;
+              const short = swShort(sw);
+              const indent = depth
+                ? `<span class="it-env-sw-indent" aria-hidden="true">${"┆".repeat(
+                    depth
+                  )}</span>`
+                : `<span class="it-env-sw-indent it-env-sw-indent-root" aria-hidden="true"></span>`;
+              return `<button type="button" class="it-env-sw${
+                depth === 0 ? " core" : ""
+              }" data-sw="${esc(sw.id)}" title="${esc(sw.name)}">
+                ${indent}
+                <span class="it-env-sw-icon" aria-hidden="true">⌘</span>
+                <span class="it-env-sw-name">${esc(short)}</span>
+                <span class="pill ${swStatusClass(sw.status)}">${esc(
+                  sw.status
+                )}</span>
+                <span class="it-env-sw-hosts">${esc(trail)}</span>
+              </button>`;
+            })
+            .join("")}
+        </div>
+        <p class="muted small it-env-hint" id="env-sw-hint"></p>
+      </section>
 
-      <div class="it-filter-row" style="margin:10px 0 8px">
-        <label>状态
-          <select id="f-status">
-            <option value="all">全部</option>
-            <option value="在线">在线</option>
-            <option value="延迟">延迟</option>
-            <option value="掉线">掉线</option>
-            <option value="未部署">未部署</option>
-          </select>
-        </label>
-        <label>探针
-          <select id="f-probe">
-            <option value="all">全部</option>
-            ${probeKinds
-              .map((p) => `<option value="${esc(p)}">${esc(p)}</option>`)
-              .join("")}
-          </select>
-        </label>
-        <label class="it-filter-q">关键字
-          <input id="f-q" type="search" placeholder="主机 / IP / 负责人 / 探针" value="${esc(
-            initialQ
-          )}" />
-        </label>
-      </div>
-      <p class="muted small" id="f-count" style="margin:0 0 8px"></p>
-
-      <div class="it-fleet-layout">
-        <div class="it-fleet-table-wrap">
-          <table class="table it-fleet-table">
-            <thead>
-              <tr>
-                <th>主机</th>
-                <th>状态</th>
-                <th>探针</th>
-                <th>最近见到</th>
-                <th>负责人</th>
-              </tr>
-            </thead>
-            <tbody id="host-list"></tbody>
-          </table>
+      <section class="it-fleet-sec" aria-label="Fleet">
+        <div class="it-fleet-sec-head">
+          <div class="it-env-label">Fleet</div>
+          <div class="it-res-strip it-fleet-strip">
+            <div class="it-res"><span class="dash-k">主机</span><strong>${hosts.length}</strong></div>
+            <div class="it-res"><span class="dash-k">在线</span><strong>${nOnline}</strong></div>
+            <div class="it-res"><span class="dash-k">延迟</span><strong>${nDelay}</strong></div>
+            <div class="it-res"><span class="dash-k">掉线</span><strong>${nDown}</strong></div>
+            <div class="it-res"><span class="dash-k">未部署</span><strong>${nUndeploy}</strong></div>
+          </div>
         </div>
-        <div class="it-fleet-detail" id="host-detail"></div>
-      </div>`;
+
+        <div class="it-filter-row" style="margin:10px 0 8px">
+          <label>状态
+            <select id="f-status">
+              <option value="all">全部</option>
+              <option value="在线">在线</option>
+              <option value="延迟">延迟</option>
+              <option value="掉线">掉线</option>
+              <option value="未部署">未部署</option>
+            </select>
+          </label>
+          <label>探针
+            <select id="f-probe">
+              <option value="all">全部</option>
+              ${probeKinds
+                .map((p) => `<option value="${esc(p)}">${esc(p)}</option>`)
+                .join("")}
+            </select>
+          </label>
+          <label class="it-filter-q">关键字
+            <input id="f-q" type="search" placeholder="主机 / IP / 负责人 / 探针" value="${esc(
+              initialQ
+            )}" />
+          </label>
+        </div>
+        <p class="muted small" id="f-count" style="margin:0 0 8px"></p>
+
+        <div class="it-fleet-layout">
+          <div class="it-fleet-table-wrap">
+            <table class="table it-fleet-table">
+              <thead>
+                <tr>
+                  <th>主机</th>
+                  <th>状态</th>
+                  <th>探针</th>
+                  <th>最近见到</th>
+                  <th>接入</th>
+                </tr>
+              </thead>
+              <tbody id="host-list"></tbody>
+            </table>
+          </div>
+          <div class="it-fleet-detail" id="host-detail"></div>
+        </div>
+      </section>`;
 
     const fStatus = root.querySelector("#f-status");
     const fProbe = root.querySelector("#f-probe");
@@ -959,16 +1078,58 @@ export async function activate({ account, url, root }) {
     const fCount = root.querySelector("#f-count");
     const hostList = root.querySelector("#host-list");
     const hostDetail = root.querySelector("#host-detail");
+    const envSwList = root.querySelector("#env-sw-list");
+    const envSwHint = root.querySelector("#env-sw-hint");
+
+    function syncSwUi() {
+      envSwList.querySelectorAll(".it-env-sw").forEach((btn) => {
+        btn.classList.toggle(
+          "active",
+          btn.getAttribute("data-sw") === selectedSw
+        );
+      });
+      if (selectedSw && swMap[selectedSw]) {
+        const short = swShort(swMap[selectedSw]);
+        const n = hostsUnder(selectedSw).length;
+        envSwHint.innerHTML = `已按 <strong>${esc(
+          short
+        )}</strong> 过滤机队（${n} 台）· <button type="button" class="linkish" id="env-sw-clear">清除</button>`;
+        const clr = root.querySelector("#env-sw-clear");
+        if (clr) {
+          clr.onclick = () => {
+            selectedSw = "";
+            syncUrl();
+            apply();
+          };
+        }
+      } else {
+        envSwHint.textContent = "点击交换机可过滤下方机队；默认不展开主机树。";
+      }
+    }
+
+    function syncUrl() {
+      const u = new URL(location.href);
+      u.searchParams.set("view", "remote");
+      if (selectedId) u.searchParams.set("host", selectedId);
+      else u.searchParams.delete("host");
+      if (selectedSw) u.searchParams.set("switch", selectedSw);
+      else u.searchParams.delete("switch");
+      history.replaceState({}, "", u);
+    }
 
     function filtered() {
       const st = fStatus.value;
       const probe = fProbe.value;
       const q = (fQ.value || "").trim().toLowerCase();
+      const swScope = selectedSw ? subtreeIds(selectedSw) : null;
       return hosts.filter((h) => {
+        if (swScope && !swScope.has(h.switchId)) return false;
         if (st !== "all" && h.status !== st) return false;
         if (probe !== "all" && !probeNames(h).includes(probe)) return false;
         if (q) {
-          const blob = `${h.host} ${h.ip} ${h.owner} ${h.dept || ""} ${h.note || ""} ${probeNames(h).join(" ")}`.toLowerCase();
+          const blob = `${h.host} ${h.ip} ${h.owner} ${h.dept || ""} ${
+            h.note || ""
+          } ${probeNames(h).join(" ")} ${swShort(swMap[h.switchId]) || ""}`.toLowerCase();
           if (!blob.includes(q)) return false;
         }
         return true;
@@ -982,12 +1143,13 @@ export async function activate({ account, url, root }) {
       }
       const ph = probeHealth(h);
       const probes = h.probes || [];
+      const sw = swMap[h.switchId];
       hostDetail.innerHTML = `
         <div class="it-fleet-detail-head">
           <div>
             <strong style="font-size:16px">${esc(h.host)}</strong>
             <div class="muted small" style="margin-top:4px">${esc(h.ip)}
-              · ${esc(h.owner)}${h.dept ? ` · ${esc(h.dept)}` : ""}</div>
+              · ${esc(h.osFamily || h.os || "—")}</div>
           </div>
           <span class="pill ${hostStatusClass(h.status)}">${esc(h.status)}</span>
         </div>
@@ -1003,8 +1165,10 @@ export async function activate({ account, url, root }) {
             <div class="it-metric-v" style="font-size:15px">${esc(h.lastSeen || "—")}</div>
           </div>
           <div class="it-kpi">
-            <div class="dash-k">备注</div>
-            <div class="muted small" style="margin-top:6px">${esc(h.note || "—")}</div>
+            <div class="dash-k">接入</div>
+            <div class="muted small" style="margin-top:6px">${esc(
+              swShort(sw)
+            )}${h.switchPort ? ` · ${esc(h.switchPort)}` : ""}</div>
           </div>
         </div>
 
@@ -1029,14 +1193,20 @@ export async function activate({ account, url, root }) {
                 h.status === "未部署" ? "（尚未部署）" : ""
               }。</p>`
         }
-        <p class="muted small" style="margin-top:12px">接入：${esc(
-          swMap[h.switchId]?.name || "—"
-        )}</p>`;
+        ${
+          h.note
+            ? `<p class="muted small" style="margin-top:12px">${esc(h.note)}</p>`
+            : ""
+        }`;
     }
 
     function apply() {
+      syncSwUi();
       const rows = filtered();
-      fCount.textContent = `显示 ${rows.length} / ${hosts.length} 台`;
+      const scopeNote = selectedSw
+        ? ` · ${swShort(swMap[selectedSw])}`
+        : "";
+      fCount.textContent = `显示 ${rows.length} / ${hosts.length} 台${scopeNote}`;
       if (selectedId && !rows.find((h) => h.id === selectedId)) {
         selectedId = rows[0]?.id || "";
       }
@@ -1059,7 +1229,7 @@ export async function activate({ account, url, root }) {
                   )}</div>
                 </td>
                 <td class="small">${esc(h.lastSeen || "—")}</td>
-                <td class="small">${esc(h.owner)}</td>
+                <td class="small">${esc(swShort(swMap[h.switchId]))}</td>
               </tr>`;
             })
             .join("")
@@ -1068,14 +1238,20 @@ export async function activate({ account, url, root }) {
       renderDetail(rows.find((h) => h.id === selectedId) || rows[0]);
     }
 
+    envSwList.onclick = (e) => {
+      const btn = e.target.closest("[data-sw]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-sw");
+      selectedSw = selectedSw === id ? "" : id;
+      syncUrl();
+      apply();
+    };
+
     hostList.onclick = (e) => {
       const row = e.target.closest("[data-host]");
       if (!row) return;
       selectedId = row.getAttribute("data-host");
-      const u = new URL(location.href);
-      u.searchParams.set("view", "remote");
-      u.searchParams.set("host", selectedId);
-      history.replaceState({}, "", u);
+      syncUrl();
       apply();
     };
 
