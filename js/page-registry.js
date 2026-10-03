@@ -2,7 +2,7 @@
  * 页面注册表：路径 → 动态模块。
  * 未登记的 .html 仍走整页跳转（如 login）。
  */
-const V = "nav57";
+const V = "nav58";
 
 function page(path) {
   return () => import(`${path}?v=${V}`);

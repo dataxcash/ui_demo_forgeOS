@@ -1,6 +1,6 @@
 {
   "asOf": "2026-10-02 19:55",
-  "note": "三轨并列：本地推理 / 外发 LLM / 内部系统。非串联流水线；Correlation 只表示跨轨关联能力。",
+  "note": "轨=审计对象 · 机制=实现方式 · 行=真实部署实体。三轨并列，非串联。",
   "coverage": {
     "status": "Normal",
     "label": "Audit coverage"
@@ -10,19 +10,40 @@
       "id": "local",
       "titleZh": "本地推理审计",
       "titleEn": "Local Inference Audit",
-      "impl": "Shadow Engine",
-      "status": "Healthy",
-      "observed": 12482,
-      "recorded": 12471,
-      "pending": 11,
-      "shadowLagMs": 42,
-      "showMismatch": false
+      "mechanism": "Shadow Engine",
+      "mechanismNote": "旁路观察 · 覆盖不同机器上的推理引擎",
+      "showMismatch": false,
+      "entities": [
+        {
+          "id": "host-h1",
+          "name": "Host",
+          "role": "H1 主推理箱",
+          "status": "Healthy",
+          "engines": 2,
+          "observed": 10240,
+          "recorded": 10231,
+          "pending": 9,
+          "shadowLagMs": 38
+        },
+        {
+          "id": "apu-1",
+          "name": "APU",
+          "role": "前置小模型箱",
+          "status": "Healthy",
+          "engines": 1,
+          "observed": 2242,
+          "recorded": 2240,
+          "pending": 2,
+          "shadowLagMs": 51
+        }
+      ]
     },
     "externalLlm": {
       "id": "external",
       "titleZh": "外发 LLM 审计",
       "titleEn": "External LLM Audit",
-      "impl": "sovProbe · sovVault",
+      "mechanism": "sovProbe · sovVault",
+      "mechanismNote": "边界旁路捕获 · 取证落盘",
       "status": "Healthy",
       "requestsObserved": 3841,
       "captureCoveragePct": 100,
@@ -37,14 +58,46 @@
       "id": "internal",
       "titleZh": "内部系统审计",
       "titleEn": "Internal System Audit",
-      "impl": "SQLite WAL",
-      "status": "Healthy",
-      "walPosition": "8F31:7A2C",
-      "walSizeMb": 128.4,
-      "redoLagSec": 0.4,
-      "replayBacklog": 0,
-      "lastCheckpointAt": "2026-10-02 19:50:00",
-      "integrity": "Verified"
+      "mechanism": "SQLite WAL",
+      "mechanismNote": "各权威库独立 WAL · 状态变更可回放",
+      "entities": [
+        {
+          "id": "uam",
+          "name": "UAM",
+          "db": "forge_uam.sqlite",
+          "scope": "钥匙 / 配额 / 凭证",
+          "status": "Verified",
+          "walPosition": "A12C:09F1",
+          "walSizeMb": 42.6,
+          "redoLagSec": 0.2,
+          "replayBacklog": 0,
+          "lastCheckpointAt": "2026-10-02 19:52:10"
+        },
+        {
+          "id": "orgdir",
+          "name": "orgdir",
+          "db": "orgdir.sqlite",
+          "scope": "组织 / 人 / 汇报",
+          "status": "Verified",
+          "walPosition": "7E40:11AB",
+          "walSizeMb": 18.1,
+          "redoLagSec": 0.3,
+          "replayBacklog": 0,
+          "lastCheckpointAt": "2026-10-02 19:51:40"
+        },
+        {
+          "id": "kg-meta",
+          "name": "kg-meta",
+          "db": "graph.sqlite",
+          "scope": "图谱对象与关系",
+          "status": "Verified",
+          "walPosition": "8F31:7A2C",
+          "walSizeMb": 67.7,
+          "redoLagSec": 0.5,
+          "replayBacklog": 0,
+          "lastCheckpointAt": "2026-10-02 19:50:00"
+        }
+      ]
     }
   },
   "correlation": {

@@ -1268,6 +1268,42 @@ a.tool-card:hover {
   font-weight: 600;
   line-height: 1.25;
 }
+.it-audit-mech {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 2px 0 2px;
+  font-size: 13px;
+}
+.it-audit-mech-k {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.it-audit-entity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.it-audit-entity {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg, #f6f7f8));
+}
+.it-audit-entity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.it-audit-entity-meta {
+  line-height: 1.45;
+  margin: 0;
+}
 .it-audit-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

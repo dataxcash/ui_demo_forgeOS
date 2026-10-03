@@ -7,10 +7,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav57";
-import { confirmDialog } from "../confirm.js?v=nav57";
-import { esc } from "../esc.js?v=nav57";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav57";
+} from "../api-mock.js?v=nav58";
+import { confirmDialog } from "../confirm.js?v=nav58";
+import { esc } from "../esc.js?v=nav58";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav58";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -49,7 +49,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav57");
+    const { softNavigate } = await import("../soft-nav.js?v=nav58");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -492,6 +492,10 @@ export async function activate({ account, url, root }) {
       return Number(n).toLocaleString("en-US");
     }
 
+    function timeShort(v) {
+      return String(v || "").replace(/^\d{4}-\d{2}-\d{2}\s*/, "") || "—";
+    }
+
     function metric(label, value, unit) {
       return `<div class="it-audit-metric">
         <div class="dash-k">${esc(label)}</div>
@@ -501,24 +505,93 @@ export async function activate({ account, url, root }) {
       </div>`;
     }
 
+    function trackStatus(entities, fallback) {
+      if (fallback) return fallback;
+      const list = entities || [];
+      if (!list.length) return "—";
+      if (list.some((e) => healthPill(e.status) === "danger")) return "Degraded";
+      if (list.some((e) => healthPill(e.status) === "warn")) return "Degraded";
+      return "Healthy";
+    }
+
+    function trackHead(track, status) {
+      return `<div class="it-audit-track-head">
+        <div>
+          <div class="it-env-label">${esc(track.titleEn || "")}</div>
+          <h3 class="it-audit-track-title">${esc(track.titleZh || "")}</h3>
+          <div class="it-audit-mech">
+            <span class="it-audit-mech-k">机制</span>
+            <strong>${esc(track.mechanism || "")}</strong>
+          </div>
+          ${
+            track.mechanismNote
+              ? `<div class="muted small">${esc(track.mechanismNote)}</div>`
+              : ""
+          }
+        </div>
+        <span class="pill ${healthPill(status)}">${esc(status)}</span>
+      </div>`;
+    }
+
+    const localEntities = local.entities || [];
+    const internalEntities = internal.entities || [];
+    const localStatus = trackStatus(localEntities, local.status);
+    const internalStatus = trackStatus(internalEntities, internal.status);
+    const externalStatus = external.status || "Healthy";
+
     const vaultPct =
       external.vaultTotalTb != null
         ? Math.round(
             (Number(external.vaultUsedTb) / Number(external.vaultTotalTb)) * 100
           )
         : 0;
-    const lastCommit = (external.lastCommitAt || "").replace(
-      /^\d{4}-\d{2}-\d{2}\s*/,
-      ""
-    );
-    const lastCkpt = (internal.lastCheckpointAt || "").replace(
-      /^\d{4}-\d{2}-\d{2}\s*/,
-      ""
-    );
 
-    const mismatchHtml = local.showMismatch
-      ? metric("Mismatch", esc(String(local.mismatch ?? 0)))
-      : "";
+    const localRows = localEntities
+      .map((e) => {
+        const mismatch =
+          local.showMismatch && e.mismatch != null
+            ? `<span class="muted"> · Mismatch ${esc(String(e.mismatch))}</span>`
+            : "";
+        return `<div class="it-audit-entity">
+          <div class="it-audit-entity-head">
+            <div>
+              <strong>${esc(e.name)}</strong>
+              <span class="muted small"> · ${esc(e.role || "")}</span>
+            </div>
+            <span class="pill ${healthPill(e.status)}">${esc(e.status || "—")}</span>
+          </div>
+          <div class="muted small it-audit-entity-meta">
+            engines ${esc(String(e.engines ?? "—"))}
+            · Observed ${esc(fmtNum(e.observed))}
+            · Recorded ${esc(fmtNum(e.recorded))}
+            · Pending ${esc(fmtNum(e.pending))}
+            · lag ${esc(String(e.shadowLagMs ?? "—"))} ms${mismatch}
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    const internalRows = internalEntities
+      .map((e) => {
+        return `<div class="it-audit-entity">
+          <div class="it-audit-entity-head">
+            <div>
+              <strong>${esc(e.name)}</strong>
+              <span class="muted small"> · ${esc(e.db || "")}</span>
+            </div>
+            <span class="pill ${healthPill(e.status)}">${esc(e.status || "—")}</span>
+          </div>
+          <div class="muted small it-audit-entity-meta">
+            ${esc(e.scope || "")}
+            · WAL ${esc(e.walPosition || "—")}
+            · ${esc(String(e.walSizeMb ?? "—"))} MB
+            · redo ${esc(String(e.redoLagSec ?? "—"))} s
+            · backlog ${esc(fmtNum(e.replayBacklog))}
+            · ckpt ${esc(timeShort(e.lastCheckpointAt))}
+          </div>
+        </div>`;
+      })
+      .join("");
 
     root.innerHTML = `
       ${headHtml(
@@ -537,42 +610,14 @@ export async function activate({ account, url, root }) {
 
       <section class="it-audit-tracks" aria-label="三轨审计">
         <article class="it-audit-track" data-track="local">
-          <div class="it-audit-track-head">
-            <div>
-              <div class="it-env-label">${esc(local.titleEn || "Local Inference Audit")}</div>
-              <h3 class="it-audit-track-title">${esc(
-                local.titleZh || "本地推理审计"
-              )}</h3>
-              <div class="muted small">${esc(local.impl || "Shadow Engine")}</div>
-            </div>
-            <span class="pill ${healthPill(local.status)}">${esc(
-              local.status || "—"
-            )}</span>
-          </div>
-          <div class="it-audit-metrics">
-            ${metric("Observed", esc(fmtNum(local.observed)))}
-            ${metric("Recorded", esc(fmtNum(local.recorded)))}
-            ${metric("Pending", esc(fmtNum(local.pending)))}
-            ${metric("Shadow lag", esc(String(local.shadowLagMs ?? "—")), "ms")}
-            ${mismatchHtml}
+          ${trackHead(local, localStatus)}
+          <div class="it-audit-entity-list">
+            ${localRows || `<p class="muted small">暂无推理引擎实体。</p>`}
           </div>
         </article>
 
         <article class="it-audit-track" data-track="external">
-          <div class="it-audit-track-head">
-            <div>
-              <div class="it-env-label">${esc(external.titleEn || "External LLM Audit")}</div>
-              <h3 class="it-audit-track-title">${esc(
-                external.titleZh || "外发 LLM 审计"
-              )}</h3>
-              <div class="muted small">${esc(
-                external.impl || "sovProbe · sovVault"
-              )}</div>
-            </div>
-            <span class="pill ${healthPill(external.status)}">${esc(
-              external.status || "—"
-            )}</span>
-          </div>
+          ${trackHead(external, externalStatus)}
           <div class="it-audit-metrics">
             ${metric("Requests observed", esc(fmtNum(external.requestsObserved)))}
             ${metric(
@@ -590,7 +635,7 @@ export async function activate({ account, url, root }) {
               )}`,
               "TB"
             )}
-            ${metric("Last commit", esc(lastCommit || "—"))}
+            ${metric("Last commit", esc(timeShort(external.lastCommitAt)))}
           </div>
           <div class="it-bar" style="margin-top:10px" title="sovVault capacity">
             <i style="width:${vaultPct}%"></i>
@@ -598,34 +643,12 @@ export async function activate({ account, url, root }) {
         </article>
 
         <article class="it-audit-track" data-track="internal">
-          <div class="it-audit-track-head">
-            <div>
-              <div class="it-env-label">${esc(
-                internal.titleEn || "Internal System Audit"
-              )}</div>
-              <h3 class="it-audit-track-title">${esc(
-                internal.titleZh || "内部系统审计"
-              )}</h3>
-              <div class="muted small">${esc(internal.impl || "SQLite WAL")}</div>
-            </div>
-            <span class="pill ${healthPill(internal.status)}">${esc(
-              internal.status || "—"
-            )}</span>
-          </div>
-          <div class="it-audit-metrics">
-            ${metric("WAL position", esc(internal.walPosition || "—"))}
-            ${metric("WAL size", esc(String(internal.walSizeMb ?? "—")), "MB")}
-            ${metric("Redo lag", esc(String(internal.redoLagSec ?? "—")), "s")}
-            ${metric("Replay backlog", esc(fmtNum(internal.replayBacklog)))}
-            ${metric("Last checkpoint", esc(lastCkpt || "—"))}
-            <div class="it-audit-metric">
-              <div class="dash-k">Integrity</div>
-              <div class="it-audit-metric-v">
-                <span class="pill ${healthPill(internal.integrity)}">${esc(
-                  internal.integrity || "—"
-                )}</span>
-              </div>
-            </div>
+          ${trackHead(internal, internalStatus)}
+          <div class="it-audit-entity-list">
+            ${
+              internalRows ||
+              `<p class="muted small">暂无内部权威库实体。</p>`
+            }
           </div>
         </article>
       </section>
