@@ -1519,11 +1519,91 @@ a.tool-card:hover {
 .it-trend.up { color: var(--warn); }
 .it-trend.down { color: var(--accent); }
 .it-trend.flat { color: var(--text-secondary); }
+
+/* —— Compute: Usage & Capacity —— */
+.it-comp-sec {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.it-comp-sec-last {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.it-comp-sec .it-env-label {
+  margin-bottom: 8px;
+}
+.it-comp-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.it-comp-strip strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.it-comp-usage {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.it-comp-usage-main {
+  min-width: 0;
+  flex: 1;
+}
+.it-comp-usage-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.it-comp-usage-line strong {
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.it-comp-usage-bar {
+  margin-top: 10px;
+  max-width: 320px;
+}
+.it-comp-gpu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.it-comp-gpu-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.it-comp-gpu-vram {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.it-comp-gpu-vram strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+}
+
 .it-model-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: var(--surface);
 }
 .it-model-row {
   display: flex;
@@ -1533,16 +1613,19 @@ a.tool-card:hover {
   width: 100%;
   text-align: left;
   padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
   font: inherit;
   color: inherit;
 }
+.it-model-row:last-child {
+  border-bottom: 0;
+}
 .it-model-row:hover,
 .it-model-row.active {
-  border-color: var(--accent);
   background: var(--accent-soft, #eef4f1);
 }
 .it-model-title {
@@ -1553,13 +1636,14 @@ a.tool-card:hover {
   margin-bottom: 2px;
 }
 .it-model-detail {
-  margin-bottom: 8px;
+  margin: 0 0 4px;
+  padding-top: 8px;
 }
 .it-hist-bars {
   display: flex;
   align-items: flex-end;
   gap: 4px;
-  height: 80px;
+  height: 72px;
   padding: 4px 0 0;
   overflow-x: auto;
 }
@@ -1785,4 +1869,125 @@ a.tool-card:hover {
   gap: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--line);
+}
+
+/* —— Storage, Tiers & Dock —— */
+.it-stor-overview {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.it-stor-overview .it-env-label {
+  margin-bottom: 4px;
+}
+.it-stor-runtime {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.it-stor-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.it-stor-strip strong {
+  font-variant-numeric: tabular-nums;
+}
+.it-stor-cap .dash-k {
+  display: block;
+  margin-bottom: 4px;
+}
+.it-stor-cap-line {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.it-stor-tiers {
+  margin-bottom: 20px;
+}
+.it-stor-tiers .it-env-label {
+  margin-bottom: 8px;
+}
+.it-stor-table td {
+  vertical-align: middle;
+}
+.it-stor-purpose,
+.it-stor-fault {
+  font-size: 13px;
+  cursor: help;
+  border-bottom: 1px dotted var(--line);
+}
+.it-stor-used {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+.it-stor-bar {
+  margin-top: 6px;
+  max-width: 120px;
+}
+.it-stor-io {
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--text-secondary);
+}
+.it-stor-dock {
+  padding-top: 2px;
+}
+.it-stor-dock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.it-stor-dock-head .it-env-label {
+  margin-bottom: 0;
+}
+.it-stor-dock-body {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.9fr) minmax(0, 1.6fr);
+  gap: 16px 28px;
+  align-items: start;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 720px) {
+  .it-stor-dock-body {
+    grid-template-columns: 1fr;
+  }
+}
+.it-stor-dock-name {
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.it-stor-dock-used {
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.it-stor-dock-focus {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 20px;
+}
+@media (max-width: 560px) {
+  .it-stor-dock-focus {
+    grid-template-columns: 1fr;
+  }
+}
+.it-stor-dock-cell .dash-k {
+  margin-bottom: 4px;
+}
+.it-stor-dock-v {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.it-stor-dock-activity .it-stor-dock-v {
+  font-weight: 500;
 }

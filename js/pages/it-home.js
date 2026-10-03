@@ -7,10 +7,10 @@ import {
   getItRemote,
   getItStorage,
   restartItService,
-} from "../api-mock.js?v=nav58";
-import { confirmDialog } from "../confirm.js?v=nav58";
-import { esc } from "../esc.js?v=nav58";
-import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav58";
+} from "../api-mock.js?v=nav61";
+import { confirmDialog } from "../confirm.js?v=nav61";
+import { esc } from "../esc.js?v=nav61";
+import { iconForNavKey, pageTitleHtml } from "../icons.js?v=nav61";
 
 export const roles = ["it"];
 export const title = "系统管理";
@@ -49,7 +49,7 @@ export async function activate({ account, url, root }) {
   const q0 = url.searchParams.get("q") || "";
 
   async function go(nextView, push, extra = {}) {
-    const { softNavigate } = await import("../soft-nav.js?v=nav58");
+    const { softNavigate } = await import("../soft-nav.js?v=nav61");
     const u = new URL("./it-home.html", location.href);
     u.searchParams.set("view", nextView);
     if (extra.q) u.searchParams.set("q", extra.q);
@@ -778,6 +778,23 @@ export async function activate({ account, url, root }) {
         cap.npuTops == null
           ? "—"
           : `${Number(cap.npuTops).toLocaleString()} TOPS`;
+      const capBits = [
+        cap.cpu
+          ? `CPU <strong>${cap.cpu.cores}/${cap.cpu.threads}</strong>`
+          : null,
+        cap.memGb != null ? `Mem <strong>${cap.memGb} GB</strong>` : null,
+        cap.vramGb != null ? `VRAM <strong>${cap.vramGb} GB</strong>` : null,
+        cap.vramBwTBs != null
+          ? `VRAM BW <strong>${cap.vramBwTBs} TB/s</strong>`
+          : null,
+        cap.pcieBwGBs != null
+          ? `PCIe <strong>${cap.pcieBwGBs} GB/s</strong>`
+          : null,
+        cap.ssdTb != null ? `SSD <strong>${cap.ssdTb} TB</strong>` : null,
+        cap.gpuTops != null ? `GPU <strong>${cap.gpuTops} TOPS</strong>` : null,
+        `NPU <strong>${npu}</strong>`,
+      ].filter(Boolean);
+
       root.innerHTML = `
         ${headHtml(
           "it-compute",
@@ -785,82 +802,68 @@ export async function activate({ account, url, root }) {
           `Usage & Capacity · 截至 ${c.asOf || ""}`
         )}
 
-        <h2 class="it-sec-title">${esc(cap.title || "静态能力 / 容量")}</h2>
-        <p class="muted small" style="margin:-4px 0 8px">${esc(
-          cap.note || "这台机器理论上有什么能力；运行态请看「运行状态」。"
-        )}</p>
-        <div class="it-metrics">
-          ${capMetric(
-            "CPU",
-            cap.cpu ? `${cap.cpu.cores} 核 / ${cap.cpu.threads} 线程` : "—"
-          )}
-          ${capMetric("内存", cap.memGb != null ? `${cap.memGb} GB` : "—")}
-          ${capMetric(
-            "最大可用显存",
-            cap.vramGb != null ? `${cap.vramGb} GB` : "—"
-          )}
-          ${capMetric(
-            "显存带宽",
-            cap.vramBwTBs != null ? `${cap.vramBwTBs} TB/s` : "—"
-          )}
-          ${capMetric(
-            "PCIe 带宽",
-            cap.pcieBwGBs != null ? `${cap.pcieBwGBs} GB/s` : "—"
-          )}
-          ${capMetric("SSD 存储", cap.ssdTb != null ? `${cap.ssdTb} TB` : "—")}
-          ${capMetric(
-            "GPU 算力",
-            cap.gpuTops != null ? `${cap.gpuTops} TOPS` : "—"
-          )}
-          ${capMetric("NPU 算力", npu)}
-        </div>
+        <section class="it-comp-sec" aria-label="Capacity">
+          <div class="it-env-label">Capacity</div>
+          <div class="it-comp-strip">${capBits
+            .map((b) => `<span>${b}</span>`)
+            .join("")}</div>
+        </section>
 
-        <div class="card" style="margin-top:14px">
-          <div class="it-svc-row">
-            <div>
-              <div class="dash-k">全模型合计 · 今日 Token</div>
-              <div class="stat">${fmtNum(c.tokenA.todayUsed)}
-                <span class="stat-label">/ ${fmtNum(c.tokenA.todayQuota)}</span></div>
-              <p class="muted small" style="margin:4px 0 0">配额已用 ${pct}%
-                · <span class="it-trend ${overallTrend.cls}">${esc(
+        <section class="it-comp-sec" aria-label="Usage">
+          <div class="it-env-label">Usage</div>
+          <div class="it-comp-usage">
+            <div class="it-comp-usage-main">
+              <div class="it-comp-usage-line">
+                <strong>${fmtNum(c.tokenA.todayUsed)}</strong>
+                <span class="muted">/ ${fmtNum(c.tokenA.todayQuota)} Token</span>
+                <span class="pill ${pct >= 90 ? "danger" : pct >= 70 ? "warn" : "ok"}">${pct}%</span>
+              </div>
+              <div class="muted small">
+                <span class="it-trend ${overallTrend.cls}">${esc(
                   overallTrend.text
                 )}</span>
-                · 较昨日 ${esc(overallSpark.deltaTxt)}</p>
+                · 较昨日 ${esc(overallSpark.deltaTxt)}
+              </div>
+              <div class="it-bar it-comp-usage-bar"><i style="width:${pct}%"></i></div>
             </div>
             <div class="it-spark-wrap" title="近 14 日合计消耗">${overallSpark.svg}</div>
           </div>
-          <div class="it-bar"><i style="width:${pct}%"></i></div>
-        </div>
+        </section>
 
-        <h2 class="it-sec-title">一、按模型</h2>
-        <p class="muted small" style="margin:-4px 0 8px">点选查看趋势与部门拆分。驻留 = 当前占显存。</p>
-        <div class="it-model-list" id="model-list"></div>
+        <section class="it-comp-sec" aria-label="Models">
+          <div class="it-env-label">Models</div>
+          <div class="it-model-list" id="model-list"></div>
+          <div id="model-detail"></div>
+        </section>
 
-        <div id="model-detail"></div>
+        <section class="it-comp-sec" aria-label="By Department">
+          <div class="it-env-label">By Department</div>
+          <div class="it-svc-matrix-wrap">
+            <table class="data it-svc-matrix">
+              <thead><tr><th>部门</th><th>今日 Token</th><th>占比</th><th>配额</th><th></th></tr></thead>
+              <tbody>
+                ${(c.byDeptToday || [])
+                  .map((r) => {
+                    const share = Math.round((r.used / total) * 100);
+                    const quota = r.quota != null ? fmtNum(r.quota) : "—";
+                    return `<tr>
+                      <td>${esc(r.name)}</td>
+                      <td>${fmtNum(r.used)}</td>
+                      <td>${share}%</td>
+                      <td class="muted">${quota}</td>
+                      <td style="min-width:100px"><div class="it-bar"><i style="width:${share}%"></i></div></td>
+                    </tr>`;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <h2 class="it-sec-title">二、按部门 · Token 用量</h2>
-        <table class="table">
-          <thead><tr><th>部门</th><th>今日 Token</th><th>占比</th><th>配额</th><th></th></tr></thead>
-          <tbody>
-            ${(c.byDeptToday || [])
-              .map((r) => {
-                const share = Math.round((r.used / total) * 100);
-                const quota =
-                  r.quota != null ? fmtNum(r.quota) : "—";
-                return `<tr>
-                  <td>${esc(r.name)}</td>
-                  <td>${fmtNum(r.used)}</td>
-                  <td>${share}%</td>
-                  <td class="muted">${quota}</td>
-                  <td style="min-width:120px"><div class="it-bar"><i style="width:${share}%"></i></div></td>
-                </tr>`;
-              })
-              .join("")}
-          </tbody>
-        </table>
-
-        <h2 class="it-sec-title">三、GPU 资源</h2>
-        <div id="gpus"></div>`;
+        <section class="it-comp-sec it-comp-sec-last" aria-label="GPU">
+          <div class="it-env-label">GPU</div>
+          <div id="gpus" class="it-comp-gpu-list"></div>
+        </section>`;
 
       root.querySelector("#model-list").innerHTML = models
         .map((mod) => {
@@ -879,9 +882,9 @@ export async function activate({ account, url, root }) {
                 }</span>
                 <span class="muted small">${esc(mod.size)}</span>
               </div>
-              <div class="muted small">今日 ${fmtNum(mod.todayUsed)} Token
+              <div class="muted small">今日 ${fmtNum(mod.todayUsed)}
                 · ${fmtNum(mod.todayCalls)} 次
-                · 占合计 ${share}%
+                · ${share}%
                 · <span class="it-trend ${tr.cls}">${esc(tr.text)}</span></div>
             </div>
             <div class="it-spark-wrap">${sp.svg}</div>
@@ -891,31 +894,29 @@ export async function activate({ account, url, root }) {
 
       const detail = root.querySelector("#model-detail");
       if (m) {
-        const sp = sparkline(m.historyDays || [], "used", { w: 280, h: 56 });
+        const sp = sparkline(m.historyDays || [], "used", { w: 280, h: 48 });
         const tr = trendLabel(m.historyDays || [], "used");
         const days = m.historyDays || [];
         detail.innerHTML = `
-          <div class="card it-model-detail">
-            <div class="it-svc-row">
-              <div>
-                <div class="dash-k">当前模型</div>
-                <strong style="font-size:16px">${esc(m.name)}</strong>
-                <span class="pill ${m.resident ? "ok" : ""}" style="margin-left:8px">${
-                  m.resident ? "驻留" : "按需"
-                }</span>
-                <p class="muted small" style="margin:4px 0 0">${esc(tr.text)}
-                  · 14 日峰值 ${fmtNum(sp.max)} · 较昨日 ${esc(sp.deltaTxt)}</p>
+          <div class="it-model-detail">
+            <div class="it-comp-usage">
+              <div class="it-comp-usage-main">
+                <div class="it-comp-usage-line">
+                  <strong>${esc(m.name)}</strong>
+                  <span class="pill ${m.resident ? "ok" : ""}">${
+                    m.resident ? "驻留" : "按需"
+                  }</span>
+                </div>
+                <div class="muted small">${esc(tr.text)}
+                  · 14 日最高 ${fmtNum(sp.max)} · 较昨日 ${esc(sp.deltaTxt)}</div>
               </div>
               <div class="it-spark-wrap">${sp.svg}</div>
             </div>
-            <h3 class="it-sec-title" style="margin-top:12px">该模型 · 近 14 日用量</h3>
+            <div class="dash-k" style="margin:12px 0 6px">近 14 日</div>
             <div class="it-hist-bars" title="每日 Token">
               ${days
                 .map((d) => {
-                  const h = Math.max(
-                    4,
-                    Math.round((d.used / sp.max) * 64)
-                  );
+                  const h = Math.max(4, Math.round((d.used / sp.max) * 56));
                   return `<div class="it-hist-col">
                     <div class="it-hist-bar" style="height:${h}px" title="${esc(
                       d.day
@@ -925,22 +926,26 @@ export async function activate({ account, url, root }) {
                 })
                 .join("")}
             </div>
-            <h3 class="it-sec-title">该模型 · 今日按部门</h3>
-            <table class="table">
-              <thead><tr><th>部门</th><th>Token</th><th>占本模型</th></tr></thead>
-              <tbody>
-                ${(m.byDept || [])
-                  .map((r) => {
-                    const share = Math.round((r.used / (m.todayUsed || 1)) * 100);
-                    return `<tr>
-                      <td>${esc(r.name)}</td>
-                      <td>${fmtNum(r.used)}</td>
-                      <td>${share}%</td>
-                    </tr>`;
-                  })
-                  .join("")}
-              </tbody>
-            </table>
+            <div class="dash-k" style="margin:12px 0 6px">今日按部门</div>
+            <div class="it-svc-matrix-wrap">
+              <table class="data it-svc-matrix">
+                <thead><tr><th>部门</th><th>Token</th><th>占本模型</th></tr></thead>
+                <tbody>
+                  ${(m.byDept || [])
+                    .map((r) => {
+                      const share = Math.round(
+                        (r.used / (m.todayUsed || 1)) * 100
+                      );
+                      return `<tr>
+                        <td>${esc(r.name)}</td>
+                        <td>${fmtNum(r.used)}</td>
+                        <td>${share}%</td>
+                      </tr>`;
+                    })
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
           </div>`;
       } else {
         detail.innerHTML = "";
@@ -962,21 +967,21 @@ export async function activate({ account, url, root }) {
           const vramPct = g.vramTotalGb
             ? Math.round((g.vramUsedGb / g.vramTotalGb) * 100)
             : 0;
-          return `<div class="card">
-            <div class="it-svc-row">
+          return `<div class="it-comp-gpu">
+            <div class="it-comp-gpu-head">
               <div>
                 <strong>${esc(g.name || g.id)}</strong>
-                <div class="muted small" style="margin-top:4px">驻留：${esc(
-                  (g.residentModels || []).join("、") || "—"
+                <div class="muted small">驻留 ${esc(
+                  (g.residentModels || []).join(" · ") || "—"
                 )}</div>
               </div>
-              <div>
-                <div class="dash-k">显存</div>
-                <div class="it-metric-v" style="font-size:16px">${g.vramUsedGb} / ${g.vramTotalGb} GB</div>
+              <div class="it-comp-gpu-vram">
+                <span class="dash-k">显存</span>
+                <strong>${g.vramUsedGb} / ${g.vramTotalGb} GB</strong>
+                <span class="muted small">${vramPct}%</span>
               </div>
             </div>
-            <div class="it-bar" style="margin-top:10px"><i style="width:${vramPct}%"></i></div>
-            <p class="muted small" style="margin:6px 0 0">已用 ${vramPct}%</p>
+            <div class="it-bar"><i style="width:${vramPct}%"></i></div>
           </div>`;
         })
         .join("");
@@ -1529,35 +1534,199 @@ export async function activate({ account, url, root }) {
   async function paintStorage() {
     document.title = "存储与码头 · 系统管理";
     const s = await getItStorage();
+    const ov = s.overview || {};
+    const runtime = s.runtime || {};
+    const tiers = s.tiers || s.layers || [];
+    const dock = s.dock || {};
+
+    function healthPill(st) {
+      const v = String(st || "");
+      if (/normal|ready|healthy|ok|mounted/i.test(v) || v === "正常") return "ok";
+      if (/critical|error|fail/i.test(v)) return "danger";
+      if (/degraded|warn|eject|empty/i.test(v)) return "warn";
+      return "warn";
+    }
+
+    function dockStatusPill(st) {
+      const v = String(st || "");
+      if (/mounted/i.test(v)) return "ok";
+      if (/error/i.test(v)) return "danger";
+      return "warn";
+    }
+
+    function activityPill(st) {
+      const v = String(st || "");
+      if (/error/i.test(v)) return "danger";
+      if (/idle|empty/i.test(v) || !v) return "";
+      return "ok";
+    }
+
+    function utilPct(used, total) {
+      const t = Number(total);
+      if (!t) return 0;
+      return Math.round((Number(used) / t) * 100);
+    }
+
+    function fmtTb(n) {
+      if (n == null || n === "") return "—";
+      return String(n);
+    }
+
+    function timeShort(v) {
+      return String(v || "").replace(/^\d{4}-\d{2}-\d{2}\s*/, "") || "—";
+    }
+
+    const tierUtils = tiers.map((t) => ({
+      id: t.id || t.name,
+      pct: utilPct(t.usedTb, t.totalTb),
+    }));
+    const maxUsed =
+      ov.maxUsedPct != null
+        ? Number(ov.maxUsedPct)
+        : ov.peakUtilPct != null
+          ? Number(ov.peakUtilPct)
+          : Math.max(0, ...tierUtils.map((t) => t.pct));
+
+    const capacityLine = tierUtils.length
+      ? tierUtils.map((t) => `${esc(t.id)} ${t.pct}%`).join(" · ")
+      : "—";
+
+    const tierRows = tiers
+      .map((t) => {
+        const pct = utilPct(t.usedTb, t.totalTb);
+        const io = t.io == null || t.io === "" ? "—" : t.io;
+        const purpose = t.purpose || "—";
+        const purposeTip = t.purposeTip || t.purposeZh || "";
+        const fault = t.faultDomain || "—";
+        const faultTip = t.faultDomainTip || fault;
+        return `<tr>
+          <td><strong>${esc(t.name || t.id)}</strong></td>
+          <td><span class="it-stor-purpose" title="${esc(purposeTip)}">${esc(
+            purpose
+          )}</span></td>
+          <td>
+            <div class="it-stor-used">${esc(fmtTb(t.usedTb))} / ${esc(
+              fmtTb(t.totalTb)
+            )} TB</div>
+            <div class="it-bar it-stor-bar"><i style="width:${pct}%"></i></div>
+          </td>
+          <td><span class="pill ${healthPill(t.health)}">${esc(
+            t.health || "—"
+          )}</span></td>
+          <td class="it-stor-io">${esc(io)}</td>
+          <td><span class="it-stor-fault" title="${esc(faultTip)}">${esc(
+            fault
+          )}</span></td>
+        </tr>`;
+      })
+      .join("");
+
+    const dockEmpty = /empty/i.test(dock.status || "") || dock.mounted === false;
+    const dockStatus = dock.status || (dock.mounted ? "Mounted" : "Empty");
+    const dockActivity = dockEmpty ? "Idle" : dock.activity || "Idle";
+    const dockFsCap = dockEmpty
+      ? "—"
+      : `${esc(dock.filesystem || "—")} · ${esc(fmtTb(dock.totalTb))} TB`;
+    const dockUsedLine = dockEmpty
+      ? ""
+      : `${esc(fmtTb(dock.usedTb))} / ${esc(fmtTb(dock.totalTb))} TB`;
+
     root.innerHTML = `
       ${headHtml(
         "it-storage",
         "存储与码头",
-        "按用途看分层健康与容量。外挂盘用于模型进料或数据导出。"
+        `Storage, Tiers & Dock · 截至 ${esc(s.asOf || "")}`
       )}
-      <div class="it-metrics">
-        ${s.layers
-          .map((l) => {
-            const pct = Math.round((l.usedTb / l.totalTb) * 100);
-            return `<div class="it-metric" style="cursor:default">
-              <div class="dash-k">${esc(l.name)}</div>
-              <div class="it-metric-v">${l.usedTb} / ${l.totalTb} TB</div>
-              <div class="it-bar" style="margin-top:8px"><i style="width:${pct}%"></i></div>
-              <p class="muted small" style="margin:6px 0 0">
-                <span class="pill ${l.health === "正常" ? "ok" : "warn"}">${esc(
-                  l.health
-                )}</span>
-                ${esc(l.note)}
-              </p>
-            </div>`;
-          })
-          .join("")}
-      </div>
-      <h2 class="it-sec-title">外挂码头</h2>
-      <div class="card">
-        <strong>${esc(s.dock.label)}</strong>
-        · ${s.dock.mounted ? '<span class="pill ok">已挂载</span>' : '<span class="pill">未挂载</span>'}
-        <p class="muted small" style="margin:8px 0 0">${esc(s.dock.note)}</p>
-      </div>`;
+
+      <section class="it-stor-overview" aria-label="Storage Overview">
+        <div class="it-env-label">Storage Overview</div>
+        <div class="it-stor-runtime">${esc(
+          runtime.role || "ForgeOS Storage Runtime"
+        )}</div>
+        <div class="it-stor-strip">
+          <span class="pill ${healthPill(ov.status)}">${esc(
+            ov.status || "—"
+          )}</span>
+          <span><strong>${esc(
+            String(ov.tierCount ?? tiers.length)
+          )}</strong> layers</span>
+          <span>Critical <strong>${esc(String(ov.critical ?? 0))}</strong></span>
+          <span>Degraded <strong>${esc(String(ov.degraded ?? 0))}</strong></span>
+          <span>I/O <strong>${esc(ov.io || "—")}</strong></span>
+          <span class="muted">最高使用率 <strong>${maxUsed}%</strong></span>
+        </div>
+        <div class="it-stor-cap">
+          <span class="dash-k">Capacity</span>
+          <div class="it-stor-cap-line">${capacityLine}</div>
+        </div>
+      </section>
+
+      <section class="it-stor-tiers" aria-label="Storage Tiers">
+        <div class="it-env-label">Storage Tiers</div>
+        <div class="it-svc-matrix-wrap">
+          <table class="data it-svc-matrix it-stor-table">
+            <thead>
+              <tr>
+                <th>Tier</th>
+                <th>用途</th>
+                <th>Used</th>
+                <th>Health</th>
+                <th>I/O</th>
+                <th>故障域</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                tierRows ||
+                `<tr><td colspan="6" class="muted">暂无存储层数据</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="it-stor-dock" aria-label="Dock">
+        <div class="it-stor-dock-head">
+          <div class="it-env-label">Dock</div>
+          <span class="pill ${dockStatusPill(dockStatus)}">${esc(
+            dockStatus
+          )}</span>
+        </div>
+        <div class="it-stor-dock-body">
+          <div class="it-stor-dock-device">
+            <div class="it-stor-dock-name">${esc(
+              dockEmpty ? "—" : dock.device || "—"
+            )}</div>
+            <div class="muted small">${dockFsCap}</div>
+            ${
+              dockUsedLine
+                ? `<div class="muted small it-stor-dock-used">${dockUsedLine}</div>`
+                : ""
+            }
+          </div>
+          <div class="it-stor-dock-focus">
+            <div class="it-stor-dock-cell">
+              <div class="dash-k">Mode</div>
+              <div class="it-stor-dock-v">${esc(
+                dock.mode || "Model Intake / Export"
+              )}</div>
+            </div>
+            <div class="it-stor-dock-cell it-stor-dock-activity">
+              <div class="dash-k">Activity</div>
+              <div class="it-stor-dock-v">
+                <span class="pill ${activityPill(
+                  dockEmpty ? "Idle" : dockActivity
+                )}">${esc(dockActivity)}</span>
+              </div>
+            </div>
+            <div class="it-stor-dock-cell">
+              <div class="dash-k">Last mount</div>
+              <div class="it-stor-dock-v">${esc(
+                dockEmpty ? "—" : timeShort(dock.lastMountAt)
+              )}</div>
+            </div>
+          </div>
+        </div>
+      </section>`;
   }
 }

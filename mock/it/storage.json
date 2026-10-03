@@ -1,50 +1,90 @@
 {
-  "overall": "正常",
-  "layers": [
+  "asOf": "2026-10-02 19:55",
+  "runtime": {
+    "name": "storaged",
+    "role": "ForgeOS Storage Runtime",
+    "status": "Ready"
+  },
+  "overview": {
+    "status": "Normal",
+    "io": "Normal",
+    "critical": 0,
+    "degraded": 0,
+    "tierCount": 5,
+    "maxUsedPct": 63
+  },
+  "tiers": [
     {
       "id": "RAW",
-      "name": "模型专用面",
+      "name": "RAW",
+      "purpose": "模型",
+      "purposeTip": "模型专用面 · Model weights",
       "usedTb": 0.42,
       "totalTb": 0.8,
-      "health": "正常",
-      "note": "确定性装载通道"
+      "health": "Normal",
+      "io": "Deterministic",
+      "faultDomain": "同槽隔离",
+      "faultDomainTip": "同槽分区隔离：与 FAST 共享 PCIe 槽组，分区级隔离"
     },
     {
       "id": "FAST",
-      "name": "高性能工作盘",
+      "name": "FAST",
+      "purpose": "热工作",
+      "purposeTip": "高性能工作盘 · Hot work (VM / 容器 / 库)",
       "usedTb": 2.1,
       "totalTb": 4.5,
-      "health": "正常",
-      "note": "库 / 容器 / 热对象"
+      "health": "Normal",
+      "io": "Aggregated",
+      "faultDomain": "同槽隔离",
+      "faultDomainTip": "同槽分区隔离：与 RAW 共享 PCIe 槽组，分区级隔离"
     },
     {
       "id": "NORMAL",
-      "name": "普通业务盘",
+      "name": "NORMAL",
+      "purpose": "业务",
+      "purposeTip": "普通业务盘 · General (可再生数据)",
       "usedTb": 3.8,
       "totalTb": 8.0,
-      "health": "正常",
-      "note": "坏一块只伤一块"
+      "health": "Normal",
+      "io": "Per-disk",
+      "faultDomain": "单盘隔离",
+      "faultDomainTip": "单盘爆炸半径：坏一块只伤一块，无跨盘聚合"
     },
     {
       "id": "HOT",
-      "name": "热备份盘",
+      "name": "HOT",
+      "purpose": "热备",
+      "purposeTip": "热备份盘 · Backup（独立通道，日常不抢带宽）",
       "usedTb": 1.2,
       "totalTb": 1.9,
-      "health": "正常",
-      "note": "另一通道，日常不抢带宽"
+      "health": "Normal",
+      "io": "Idle path",
+      "faultDomain": "跨槽隔离",
+      "faultDomainTip": "跨槽通道隔离：独立 PCIe 槽位，备份流量不抢工作集带宽"
     },
     {
       "id": "COLD",
-      "name": "冷备份",
+      "name": "COLD",
+      "purpose": "冷备",
+      "purposeTip": "冷备份 · Cold archive (SATA)",
       "usedTb": 6.0,
       "totalTb": 12.0,
-      "health": "正常",
-      "note": "冷数据"
+      "health": "Normal",
+      "io": "—",
+      "faultDomain": "冷面",
+      "faultDomainTip": "SATA 冷面：慢盘配冷数据，与热面彻底分家"
     }
   ],
   "dock": {
-    "mounted": false,
-    "label": "外挂码头",
-    "note": "插入后用于模型进料或数据导出。当前无外挂盘。"
+    "status": "Mounted",
+    "device": "USB-SSD-01",
+    "filesystem": "exFAT",
+    "usedTb": 1.8,
+    "totalTb": 4.0,
+    "mode": "Model Intake",
+    "rw": "Read / Write",
+    "io": "Normal",
+    "lastMountAt": "2026-10-02 19:41:12",
+    "activity": "Importing"
   }
 }

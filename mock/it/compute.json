@@ -1,6 +1,5 @@
 {
   "asOf": "2026-10-02 19:55",
-  "note": "Usage & Capacity：谁在用、占多少、容量够不够。运行态请看「运行状态」。",
   "computeService": {
     "status": "运行中",
     "qps": 3.2,
@@ -505,8 +504,6 @@
     }
   ],
   "capacity": {
-    "title": "静态能力 / 容量",
-    "note": "这台机器理论上有什么能力；运行态请看「运行状态」。",
     "cpu": {
       "cores": 64,
       "threads": 128
